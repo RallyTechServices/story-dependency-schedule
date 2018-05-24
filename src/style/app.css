@@ -1,0 +1,56 @@
+.app {
+}
+.tsinfolink {
+    position:absolute;
+    right:0px;
+    width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    text-align: center;
+    color: white;
+    background: #C0C0C0;
+    border-style: solid;
+    border-width: 1px;
+    margin-top: 25px;
+    margin-right: 5px;
+    cursor: pointer;
+}
+
+.legend {
+    display: inline-flex;
+    background-color: white;
+}
+
+.status-colors {
+    display:inline-flex;
+    cursor: pointer;
+}
+
+.status-color {
+    padding: 0 5px 0 5px;
+    border-radius: 50px;
+}
+
+.late {
+    background-color: #F66349;
+}
+
+.at-risk {
+    background-color: #FAD200;
+}
+
+.not-started {
+    background-color: #E0E0E0;
+}
+
+.on-track {
+    background-color: #8DC63F;
+}
+
+.complete {
+    background-color: #D1D1D1;
+}
+
+.hidden {
+    visibility: hidden;
+}
