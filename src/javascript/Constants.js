@@ -2,7 +2,7 @@
 Ext.define('Constants', function(Constants) {
     return {
         statics: {
-            PORTFOLIO_ITEM_FETCH_FIELDS: ['Predecessors', 'Successors'],
+            STORY_FETCH_FIELDS: ['Predecessors', 'Successors'],
             CLASS: {
                 PREDECESSORS: 'predecessors',
                 SUCCESSORS: 'successors',

@@ -2,69 +2,68 @@
 Ext.define('MetricsManager', function(MetricsManager) {
     return {
         statics: {
-            addMetrics: addMetrics
+            createDependencyStore: createDependencyStore
         }
     }
 
-    function addMetrics(records) {
-        _.forEach(records, function(record) {
+    function createDependencyStore(records) {
+        return _loadDependencies(records)
+            .then({
+                success: function(results) {
+                    var store = Ext.create('Rally.data.custom.Store', {
+                        data: results
+                    });
+                    return store;
+                }
+            });
+    }
+
+    /**
+     * Returns a promise that resolves to an array of stories that are the
+     * dependencies of the given stories. Each primary story has
+     * has a __Predecessors and __Successors array set, and each dependency
+     * has a __PrimaryStory reference set.
+     */
+    function _loadDependencies(records) {
+        var storeData = [];
+        var dependentPromises = _.map(records, function(record) {
             var predecessorsRef = record.get('Predecessors');
             var successorsRef = record.get('Successors');
+            var predecessors = [];
             if (predecessorsRef.Count > 0) {
-                record
+                predecessors = record
                     .getCollection('Predecessors')
                     .load()
                     .then(function(predecessors) {
-                        record.set('PredecessorCount', predecessors.length);
-                        var storyCountColors = {};
-                        var planEstimateColors = {};
+                        record.set('__Predecessors', predecessors);
                         _.forEach(predecessors, function(item) {
-                            var color;
-                            color = Ext.Object.merge({}, Rally.util.HealthColorCalculator.calculateHealthColorForPortfolioItemData(item.data, 'PercentDoneByStoryCount'));
-                            var colorKey = color.label;
-                            if (!storyCountColors[color.label]) {
-                                color.count = 1;
-                                // Must use merge because HealthColorCalculator returns status objects
-                                storyCountColors[color.label] = Ext.Object.merge({}, color);
-                            }
-                            else {
-                                storyCountColors[color.label].count += 1;
-                            }
+                            item.set('__PrimaryStory', record);
+                            storeData.push(item);
                         });
-                        splitColors(record, storyCountColors, 'Predecessors', 'StoryCount');
                     });
             }
-            else {
-                splitColors(record, null, 'Predecessors', 'StoryCount');
-            }
-
+            var successors = [];
             if (successorsRef.Count > 0) {
-                record
+                successors = record
                     .getCollection('Successors')
                     .load()
                     .then(function(successors) {
-                        record.set('SuccessorCount', successors.length);
-                        var storyCountColors = {};
-                        var planEstimateColors = {};
+                        record.set('__Successors', predecessors);
                         _.forEach(successors, function(item) {
-                            var color;
-                            color = Rally.util.HealthColorCalculator.calculateHealthColorForPortfolioItemData(item.data, 'PercentDoneByStoryCount');
-                            var colorKey = color.label;
-                            if (!storyCountColors[colorKey]) {
-                                color.count = 1;
-                                storyCountColors[colorKey] = Ext.Object.merge({}, color);
-                            }
-                            else {
-                                storyCountColors[colorKey].count += 1;
-                            }
+                            item.set('__PrimaryStory', record);
+                            storeData.push(item);
                         });
-                        splitColors(record, storyCountColors, 'Successors', 'StoryCount');
                     });
             }
-            else {
-                splitColors(record, null, 'Successors', 'StoryCount');
-            }
+            return Deft.promise.Promise
+                .all([predecessors, successors])
+                .then({
+                    success: function(dependencies) {
+                        return storeData;
+                    }
+                })
         });
+        return Deft.promise.Promise.all(dependentPromises);
     }
 
     function splitColors(record, colors, relation, metric) {
