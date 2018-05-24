@@ -111,7 +111,7 @@ Ext.override(Rally.ui.grid.TreeGrid, {
 
         return currentColumns.concat(addedColumns);
     },
-    /*
+
     _applyStatefulColumns: function(columns) {
         // TODO (tj) test default columns
         if (this.alwaysShowDefaultColumns) {
@@ -141,5 +141,4 @@ Ext.override(Rally.ui.grid.TreeGrid, {
 
         this.columnCfgs = columns;
     },
-    */
 });

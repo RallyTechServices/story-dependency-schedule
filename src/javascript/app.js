@@ -51,7 +51,7 @@ Ext.define("CArABU.app.TSApp", {
         Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
             models: modelNames,
             autoLoad: false,
-            enableHierarchy: true,
+            enableHierarchy: false,
             filters: pageFilters,
             listeners: {
                 scope: this,
@@ -68,7 +68,6 @@ Ext.define("CArABU.app.TSApp", {
                     context: this.getContext(),
                     modelNames: modelNames,
                     toggleState: 'grid',
-                    /*
                     plugins: [{
                             ptype: 'rallygridboardinlinefiltercontrol',
                             inlineFilterButtonConfig: {
@@ -77,6 +76,7 @@ Ext.define("CArABU.app.TSApp", {
                                 modelNames: modelNames,
                                 inlineFilterPanelConfig: {
                                     quickFilterPanelConfig: {
+                                        // TODO (tj) tags
                                         defaultFields: [
                                             'ArtifactSearch',
                                             'Owner',
@@ -99,7 +99,6 @@ Ext.define("CArABU.app.TSApp", {
                             showInGridMode: true
                         }
                     ],
-                    */
                     gridConfig: {
                         store: store,
                         storeConfig: {
@@ -112,8 +111,8 @@ Ext.define("CArABU.app.TSApp", {
                         enableRanking: false,
                         enableBulkEdit: false,
                         alwaysShowDefaultColumns: false, // Otherwise you get 2 copies of the `derived` columns
-                        //stateful: false,
-                        //stateId: context.getScopedStateId('grid-state'),
+                        stateful: false,
+                        stateId: context.getScopedStateId('grid-state'),
                         listeners: {
                             scope: this,
                             cellclick: function(grid, td, cellIndex, record, tr, rowIndex, event) {
@@ -138,6 +137,26 @@ Ext.define("CArABU.app.TSApp", {
     getColumns: function() {
         // TODO (tj) are derived columns needed in getColumns...or perhaps override can detect
         // a derived column in the normal column list
+        return [
+
+        ].concat(this.getDerivedColumns());
+    },
+    getDerivedColumns: function() {
+        // TODO (tj) predecessor and successor columns
+        /*
+        return [{
+            dataIndex: 'PredecessorsStoryCountColorSortKey',
+            text: 'Predecessors By Story Count',
+            //width: 100,
+            //tpl: '<span><tpl for="PredecessorsStoryCountColors"><span class="{[ values.label.toLowerCase().replace(" ","-") ]}">{count}</span></tpl></span>',
+            scope: this,
+            renderer: function(value, meta, record, row, col, store) {
+                return this.colorsRenderer(record.get('PredecessorsStoryCountColors'), Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT);
+            },
+            sortable: true,
+            tdCls: Constants.CLASS.PREDECESSORS + ' ' + Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT
+        }];
+        */
         return [{
                 xtype: 'gridcolumn',
                 text: 'User Stories',
@@ -153,24 +172,7 @@ Ext.define("CArABU.app.TSApp", {
                 text: 'Successors',
                 columns: this.getSubColumns()
             }
-        ].concat(this.getDerivedColumns());
-    },
-    getDerivedColumns: function() {
-        // TODO (tj) predecessor and successor columns
-        return [
-            /*{
-                            dataIndex: 'PredecessorsStoryCountColorSortKey',
-                            text: 'Predecessors By Story Count',
-                            //width: 100,
-                            //tpl: '<span><tpl for="PredecessorsStoryCountColors"><span class="{[ values.label.toLowerCase().replace(" ","-") ]}">{count}</span></tpl></span>',
-                            scope: this,
-                            renderer: function(value, meta, record, row, col, store) {
-                                return this.colorsRenderer(record.get('PredecessorsStoryCountColors'), Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT);
-                            },
-                            sortable: true,
-                            tdCls: Constants.CLASS.PREDECESSORS + ' ' + Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT
-                        },*/
-        ];
+        ]
     },
     getSubColumns: function() {
         return [{
