@@ -72,19 +72,4 @@ Ext.define('MetricsManager', function(MetricsManager) {
             }
         })
     }
-
-    function splitColors(record, colors, relation, metric) {
-        if (colors) {
-            var sortedColors = [];
-            _.forEach(Constants.STATUS_LABEL_ORDER, function(statusLabel) {
-                sortedColors.push(colors[statusLabel.label] ? colors[statusLabel.label] : statusLabel);
-            });
-            record.set(relation + metric + 'Colors', sortedColors);
-            record.set(relation + metric + 'ColorSortKey', _.pluck(sortedColors, 'count').join('+'));
-        }
-        else {
-            record.set(relation + metric + 'Colors', []);
-            record.set(relation + metric + 'ColorSortKey', '');
-        }
-    }
 });
