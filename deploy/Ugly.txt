@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CATS-Story Dependency Schedule-0.0.1</title>
+    <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
+    <!--  Build Date: Tue May 29 2018 21:45:14 GMT+0000 (UTC) -->
+
+    <script type="text/javascript">
+        var APP_BUILD_DATE = "Tue May 29 2018 21:45:14 GMT+0000 (UTC)";
+        var ARTIFACT = "";
+        var BUILDER  = "ec2-user";
+        var CHECKSUM = 1902778964;
+    </script>
+
+    <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
+    <!-- our highcharts (needed so that we can add patterns)
+    <script type="text/javascript" src="/apps/2.1/lib/analytics/analytics-all.js"></script>
+    -->
+
+
+    <script type="text/javascript">
+        Rally.onReady(function() {
+            Ext.define("Constants",function(a){return{statics:{STORY_FETCH_FIELDS:["Predecessors","Successors","FormattedID","Name","Project","Iteration","StartDate"],CLASS:{OK:"ok",WARNING:"warning",ERROR:"error"},ID:{STORY:"STORY",PREDECESSOR:"PREDECESSOR",SUCCESSOR:"SUCCESSOR"},LABEL:{UNSCHEDULED:"Unscheduled"}}}}),Ext.define("MetricsManager",function(a){function b(a){return c(a).then({success:function(a){var b=Ext.create("Rally.data.custom.Store",{data:a});return b}})}function c(a){var b=_.map(a,function(a){var b=a.get("Predecessors"),c=a.get("Successors"),d=[];b.Count>0&&(d=a.getCollection("Predecessors",{fetch:Rally.getApp().storyFetchFields}).load().then(function(a){return a}));var e=[];return c.Count>0&&(e=a.getCollection("Successors",{fetch:Rally.getApp().storyFetchFields}).load()),Deft.promise.Promise.all([d,e]).then({scope:this,success:function(b){var c=_.zip([a],b[0],b[1]);return _.map(c,function(b){var c={};return c[Constants.ID.STORY]=a,c[Constants.ID.PREDECESSOR]=b[1],c[Constants.ID.SUCCESSOR]=b[2],c})}})});return Deft.promise.Promise.all(b).then({success:function(a){return _.flatten(a)}})}return{statics:{createDependencyStore:b}}}),Ext.define("CArABU.app.TSApp",{extend:"Rally.app.App",componentCls:"app",defaults:{margin:10},layout:{type:"vbox",align:"stretch"},items:[{xtype:"container",layout:"hbox",items:[{xtype:"container",flex:1}]}],integrationHeaders:{name:"CArABU.app.TSApp"},piTypePath:void 0,onTimeboxScopeChange:function(a){this.callParent(arguments),this.launch()},initLowestPortfolioItemTypeName:function(){return Ext.create("Rally.data.wsapi.Store",{model:Ext.identityFn("TypeDefinition"),fetch:["Name","Ordinal","TypePath"],sorters:{property:"Ordinal",direction:"ASC"},filters:[{property:"Creatable",operator:"=",value:"true"},{property:"Parent.Name",operator:"=",value:"Portfolio Item"}]}).load().then({scope:this,success:function(a){this.lowestPortfolioItemTypeName=a[0].get("Name"),this.storyFetchFields=Constants.STORY_FETCH_FIELDS,this.storyFetchFields.push(this.lowestPortfolioItemTypeName)}})},getLowestPortfolioItemTypeName:function(){return this.lowestPortfolioItemTypeName||"Feature"},launch:function(){this.initLowestPortfolioItemTypeName().then({scope:this,success:this.loadPrimaryStories})},loadPrimaryStories:function(){var a=[],b=this.getContext().getTimeboxScope();b&&a.push(b.getQueryFilter()),Ext.create("Rally.data.wsapi.Store",{model:"hierarchicalrequirement",autoLoad:!0,filters:a,listeners:{scope:this,load:function(a,b){MetricsManager.createDependencyStore(b).then({scope:this,success:function(a){this.addGrid(a)}})}},fetch:this.storyFetchFields})},addGrid:function(a){var b=this.down("#grid");b&&this.remove(b),this.add({xtype:"rallygrid",itemId:"grid",shouldShowRowActionsColumn:!1,store:a,columnCfgs:this.getColumns(),listeners:{scope:this,itemclick:function(a,b,c,d){console.log(b)}}})},getColumns:function(){return[{xtype:"gridcolumn",text:"Story",columns:this.getSubColumns(Constants.ID.STORY)},{xtype:"gridcolumn",text:"Predecessor",columns:this.getSubColumns(Constants.ID.PREDECESSOR)},{xtype:"gridcolumn",text:"Successor",columns:this.getSubColumns(Constants.ID.SUCCESSOR)}]},getSubColumns:function(a){return[{xtype:"gridcolumn",text:"ID",renderer:function(b,c,d){try{return d.get(a).get("FormattedID")}catch(e){return""}}},{xtype:"gridcolumn",text:"Name",renderer:function(b,c,d){try{return d.get(a).get("Name")}catch(e){return""}}},{xtype:"gridcolumn",text:"Project",renderer:function(b,c,d){try{return d.get(a).get("Project").Name}catch(e){return""}}},{xtype:"gridcolumn",text:"Iteration",scope:this,renderer:function(b,c,d){var e;switch(a){case Constants.ID.PREDECESSOR:e=this.predecessorIterationRenderer(d);break;case Constants.ID.SUCCESSOR:e=this.successorIterationRenderer(d);break;default:e=this.primaryIterationRenderer(d)}return e}},{xtype:"gridcolumn",text:this.lowestPortfolioItemTypeName,scope:this,renderer:function(b,c,d){try{return d.get(a).get(this.lowestPortfolioItemTypeName).Name}catch(e){return""}}}]},primaryIterationRenderer:function(a){var b=Constants.CLASS.OK;try{var c=a.get(Constants.ID.STORY).get("Iteration").Name}catch(d){c=Constants.LABEL.UNSCHEDULED,b=Constants.CLASS.ERROR}return this.colorsRenderer(c,b)},predecessorIterationRenderer:function(a){var b,c=a.get(Constants.ID.STORY),d=a.get(Constants.ID.PREDECESSOR);if(d){var e,f=Constants.CLASS.OK,g=c.get("Iteration"),h=d.get("Iteration");if(h&&g){e=h.Name;var i=g.StartDate,j=h.StartDate;i>j||(f=j==i?Constants.CLASS.WARNING:Constants.CLASS.ERROR)}else!h&&g?(e=Constants.LABEL.UNSCHEDULED,f=Constants.CLASS.ERROR):h&&!g?e=h.Name:h||g||(e="");b=this.colorsRenderer(e,f)}return b},successorIterationRenderer:function(a){var b,c=a.get(Constants.ID.STORY),d=a.get(Constants.ID.SUCCESSOR);if(d){var e,f=Constants.CLASS.OK,g=c.get("Iteration"),h=d.get("Iteration");if(h&&g){e=h.Name;var i=g.StartDate,j=h.StartDate;j>i||(f=j==i?Constants.CLASS.WARNING:Constants.CLASS.ERROR)}else!h&&g?(e=Constants.LABEL.UNSCHEDULED,f=Constants.CLASS.ERROR):h&&!g?e=h.Name:h||g||(e="");b=this.colorsRenderer(e,f)}return b},colorsRenderer:function(a,b){return'<div class="status-color '+b+'">'+a+"</div>"}});
+
+               Rally.launchApp('CArABU.app.TSApp', {
+                   name: 'Story Dependency Schedule'
+               });
+        });
+    </script>
+
+    <style type="text/css">
+
+.app {}
+
+.status-color {
+    padding: 0 5px 0 5px;
+    border-radius: 50px;
+}
+
+.error {
+    background-color: #F66349;
+}
+
+.warning {
+    background-color: #FAD200;
+}
+
+    </style>
+
+</head>
+<body></body>
+</html>

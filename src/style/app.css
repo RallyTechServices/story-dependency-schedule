@@ -1,0 +1,14 @@
+.app {}
+
+.status-color {
+    padding: 0 5px 0 5px;
+    border-radius: 50px;
+}
+
+.error {
+    background-color: #F66349;
+}
+
+.warning {
+    background-color: #FAD200;
+}
