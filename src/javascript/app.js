@@ -34,247 +34,363 @@ Ext.define("CArABU.app.TSApp", {
     },
 
     loadPrimaryStories: function() {
-        var modelNames = ['hierarchicalrequirement'];
         var pageFilters = [];
         var timeboxScope = this.getContext().getTimeboxScope();
         if (timeboxScope) {
             pageFilters.push(timeboxScope.getQueryFilter());
         }
-        Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
-            models: modelNames,
+        Ext.create('Rally.data.wsapi.Store', {
+            model: 'hierarchicalrequirement',
             autoLoad: true,
-            enableHierarchy: false,
             filters: pageFilters,
             listeners: {
                 scope: this,
-                load: function(store, node, records) {
-                    this.loadStoryDependencies(records)
+                load: function(store, records) {
+                    MetricsManager.createDependencyStore(records)
+                        .then({
+                            scope: this,
+                            success: function(store) {
+                                this.addGrid(store)
+                            }
+                        })
                 }
             },
             fetch: Constants.STORY_FETCH_FIELDS
-        }).then({
-            scope: this,
-            success: function(store) {
-                store.load();
-            }
-        })
-    },
-
-    loadStoryDependencies: function(stories) {
-        MetricsManager.createDependencyStore(stories)
-            .then({
-                scope: this,
-                success: function(store) {
-                    this.addGrid(store)
-                }
-            })
+        });
     },
 
     addGrid: function(store) {
-        var grid = this.down('rallygrid');
+        var grid = this.down('#grid');
         if (grid) {
             this.remove(grid);
         }
 
         this.add({
             xtype: 'rallygrid',
+            itemId: 'grid',
+            shouldShowRowActionsColumn: false,
             store: store,
-            columns: this.getColumns()
+            columnCfgs: this.getColumns(),
+            listeners: {
+                scope: this,
+                itemclick: function(grid, record, item, index) {
+                    console.log(record);
+                }
+            }
         })
     },
 
-    /*
-        addGrid: function(store) {
-            var gridboard = this.down('rallygridboard');
-            if (gridboard) {
-                this.remove(gridboard);
-            }
-
-            var modelNames = ['hierarchicalrequirement'];
-            var context = this.getContext();
-
-            var pageFilters = [];
-            var timeboxScope = this.getContext().getTimeboxScope();
-            if (timeboxScope) {
-                pageFilters.push(timeboxScope.getQueryFilter());
-            }
-
-            Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
-                models: modelNames,
-                autoLoad: false,
-                enableHierarchy: false,
-                filters: pageFilters,
-                listeners: {
-                    scope: this,
-                    load: function(store, node, records) {
-                        MetricsManager.addMetrics(records);
-                    }
-                },
-                fetch: Constants.PORTFOLIO_ITEM_FETCH_FIELDS
-            }).then({
-                success: function(store) {
-                    var me = this;
-                    this.add({
-                        xtype: 'rallygridboard',
-                        context: this.getContext(),
-                        modelNames: modelNames,
-                        toggleState: 'grid',
-                        plugins: [{
-                                ptype: 'rallygridboardinlinefiltercontrol',
-                                inlineFilterButtonConfig: {
-                                    stateful: false,
-                                    stateId: context.getScopedStateId('feature-filters'),
-                                    modelNames: modelNames,
-                                    inlineFilterPanelConfig: {
-                                        quickFilterPanelConfig: {
-                                            // TODO (tj) tags
-                                            defaultFields: [
-                                                'ArtifactSearch',
-                                                'Owner',
-                                                'ScheduleState'
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            {
-                                ptype: 'rallygridboardfieldpicker',
-                                headerPosition: 'left',
-                                modelNames: modelNames,
-                                stateful: true,
-                                stateId: context.getScopedStateId('feature-columns')
-                            },
-                            {
-                                ptype: 'tslegendgridboardplugin',
-                                headerPosition: 'right',
-                                showInGridMode: true
-                            }
-                        ],
-                        gridConfig: {
-                            store: store,
-                            storeConfig: {
-                                // page-level filters must be set in the store config to allow them to merge with
-                                // any changes made in the `rallygridboardinlinefiltercontrol`
-                                filters: pageFilters
-                            },
-                            enabledEditing: true,
-                            shouldShowRowActionsColumn: true,
-                            enableRanking: false,
-                            enableBulkEdit: false,
-                            alwaysShowDefaultColumns: false, // Otherwise you get 2 copies of the `derived` columns
-                            stateful: false,
-                            stateId: context.getScopedStateId('grid-state'),
-                            listeners: {
-                                scope: this,
-                                cellclick: function(grid, td, cellIndex, record, tr, rowIndex, event) {
-                                    // If this is a status color cell, show the dependencies popover
-                                    // TODO (tj) not a big fan of using CSS classes to determine column, but didn't
-                                    // see another way to get column from cellclick event?
-                                    if (Ext.query('.' + Constants.CLASS.STATUS_COLORS, td).length > 0) {
-                                        // TODO (tj) Any per row data?
-                                    }
-                                }
-                            },
-                            columnCfgs: this.getColumns(),
-                            derivedColumns: this.getDerivedColumns()
-                        },
-                        height: this.getHeight()
-                    });
-                },
-                scope: this
-            });
-        },
-        */
-
     getColumns: function() {
-        // TODO (tj) are derived columns needed in getColumns...or perhaps override can detect
-        // a derived column in the normal column list
-        return [
+        return [{
+                xtype: 'gridcolumn',
+                text: 'Story',
+                columns: this.getSubColumns(Constants.ID.STORY)
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Predecessor',
+                columns: this.getSubColumns(Constants.ID.PREDECESSOR)
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Successor',
+                columns: this.getSubColumns(Constants.ID.SUCCESSOR)
+            }
+        ]
+    },
+    getSubColumns: function(dataIndex) {
+        return [{
+                xtype: 'gridcolumn',
+                text: 'ID',
+                renderer: function(value, meta, record) {
+                    try {
+                        return record.get(dataIndex).get('FormattedID');
+                    }
+                    catch (exception) {
+                        return '';
+                    }
+                }
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Name',
+                renderer: function(value, meta, record) {
+                    try {
+                        return record.get(dataIndex).get('Name');
+                    }
+                    catch (exception) {
+                        return '';
+                    }
+                }
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Project',
+                renderer: function(value, meta, record) {
+                    try {
+                        return record.get(dataIndex).get('Project').Name;
+                    }
+                    catch (exception) {
+                        return '';
+                    }
+                }
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Iteration',
+                scope: this,
+                renderer: function(value, meta, record) {
+                    var result;
+                    switch (dataIndex) {
+                        case Constants.ID.PREDECESSOR:
+                            result = this.predecessorIterationRenderer(record);
+                            break;
+                        case Constants.ID.SUCCESSOR:
+                            result = this.successorIterationRenderer(record);
+                            break;
+                        default:
+                            result = this.primaryIterationRenderer(record);
+                            break;
+                    }
+                    return result;
+                }
+            },
+            {
+                xtype: 'gridcolumn',
+                text: 'Feature',
+                renderer: function(value, meta, record) {
+                    try {
+                        return record.get(dataIndex).get('Feature').Name;
+                    }
+                    catch (exception) {
+                        return '';
+                    }
+                }
+            },
+        ]
+    },
 
-        ].concat(this.getDerivedColumns());
+    // TODO (tj) TEST
+    primaryIterationRenderer: function(row) {
+        var colorClass = Constants.CLASS.OK;
+        try {
+            var primaryIterationName = row.get(Constants.ID.STORY).get('Iteration').Name;
+        }
+        catch (ex) {
+            primaryIterationName = Constants.LABEL.UNSCHEDULED;
+            colorClass = Constants.CLASS.ERROR;
+        }
+
+        return this.colorsRenderer(primaryIterationName, colorClass);
     },
-    getDerivedColumns: function() {
-        // TODO (tj) predecessor and successor columns
-        /*
-        return [{
-            dataIndex: 'PredecessorsStoryCountColorSortKey',
-            text: 'Predecessors By Story Count',
-            //width: 100,
-            //tpl: '<span><tpl for="PredecessorsStoryCountColors"><span class="{[ values.label.toLowerCase().replace(" ","-") ]}">{count}</span></tpl></span>',
-            scope: this,
-            renderer: function(value, meta, record, row, col, store) {
-                return this.colorsRenderer(record.get('PredecessorsStoryCountColors'), Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT);
-            },
-            sortable: true,
-            tdCls: Constants.CLASS.PREDECESSORS + ' ' + Constants.CLASS.PERCENT_DONE_BY_STORY_COUNT
-        }];
-        */
-        return [{
-                xtype: 'gridcolumn',
-                text: 'User Stories',
-                columns: this.getSubColumns()
-            },
-            {
-                xtype: 'gridcolumn',
-                text: 'Predecessors',
-                columns: this.getSubColumns()
-            },
-            {
-                xtype: 'gridcolumn',
-                text: 'Successors',
-                columns: this.getSubColumns()
+
+    // TODO (tj) TEST
+    predecessorIterationRenderer: function(row) {
+        var result;
+        var primaryStory = row.get(Constants.ID.STORY);
+        var predecessor = row.get(Constants.ID.PREDECESSOR);
+
+        if (predecessor) {
+            var colorClass = Constants.CLASS.OK;
+            var primaryIteration = primaryStory.get('Iteration');
+            var predecessorIteration = predecessor.get('Iteration');
+
+            var predecessorIterationName;
+
+            if (predecessorIteration && primaryIteration) {
+                predecessorIterationName = predecessorIteration.Name;
+                var primaryStartDate = primaryIteration.StartDate;
+                var predecessorStartDate = predecessorIteration.StartDate;
+
+                if (predecessorStartDate < primaryStartDate) {
+                    // Predecessor scheduled before primary. OK
+                }
+                else if (predecessorStartDate == primaryStartDate) {
+                    // Predecessor scheduled in same iteration as primary. Warn
+                    colorClass = Constants.CLASS.WARNING;
+                }
+                else {
+                    // Predecessor scheduled after primary (or not scheduled). Error
+                    colorClass = Constants.CLASS.ERROR;
+                }
             }
-        ]
+            else if (!predecessorIteration && primaryIteration) {
+                // No predecessor iteration when there is a primary. Highlight as error
+                predecessorIterationName = Constants.LABEL.UNSCHEDULED;
+                colorClass = Constants.CLASS.ERROR;
+            }
+            else if (predecessorIteration && !primaryIteration) {
+                // Predecessor but no primary, don't highlight the iteration name
+                predecessorIterationName = predecessorIteration.Name;
+            }
+            else if (!predecessorIteration && !primaryIteration) {
+                // display nothing
+                predecessorIterationName = '';
+            }
+
+            result = this.colorsRenderer(predecessorIterationName, colorClass);
+        }
+
+        return result;
     },
-    getSubColumns: function() {
-        return [{
-                xtype: 'gridcolumn',
-                dataIndex: 'FormattedID',
-                text: 'ID'
-            },
-            {
-                xtype: 'gridcolumn',
-                dataIndex: 'Name',
-                text: 'Name'
-            },
-            {
-                xtype: 'gridcolumn',
-                dataIndex: 'Project',
-                text: 'Project'
-            },
-            {
-                xtype: 'gridcolumn',
-                dataIndex: 'Iteration',
-                text: 'Iteration'
-            },
-            {
-                xtype: 'gridcolumn',
-                dataIndex: 'Epic',
-                text: 'Epic'
+
+    // TODO (tj) TEST
+    successorIterationRenderer: function(row) {
+        var result;
+        var primaryStory = row.get(Constants.ID.STORY);
+        var dependency = row.get(Constants.ID.SUCCESSOR);
+
+        if (dependency) {
+            var colorClass = Constants.CLASS.OK;
+            var primaryIteration = primaryStory.get('Iteration');
+            var dependencyIteration = dependency.get('Iteration');
+
+            var dependencyIterationName;
+
+            if (dependencyIteration && primaryIteration) {
+                dependencyIterationName = dependencyIteration.Name;
+                var primaryStartDate = primaryIteration.StartDate;
+                var dependencyStartDate = dependencyIteration.StartDate;
+
+                if (dependencyStartDate > primaryStartDate) {
+                    // dependency scheduled before primary. OK
+                }
+                else if (dependencyStartDate == primaryStartDate) {
+                    // dependency scheduled in same iteration as primary. Warn
+                    colorClass = Constants.CLASS.WARNING;
+                }
+                else {
+                    // dependency scheduled after primary (or not scheduled). Error
+                    colorClass = Constants.CLASS.ERROR;
+                }
             }
-        ]
+            else if (!dependencyIteration && primaryIteration) {
+                // No dependency iteration when there is a primary. Highlight as error
+                dependencyIterationName = Constants.LABEL.UNSCHEDULED;
+                colorClass = Constants.CLASS.ERROR;
+            }
+            else if (dependencyIteration && !primaryIteration) {
+                // dependency but no primary, don't highlight the iteration name
+                dependencyIterationName = dependencyIteration.Name;
+            }
+            else if (!dependencyIteration && !primaryIteration) {
+                // display nothing
+            }
+
+            result = this.colorsRenderer(dependencyIterationName, colorClass);
+        }
+
+        return result;
     },
 
     /**
-     * sortedColors: Array of counts
+     * value: String to display
      * cls: Extra class to add to the cell
      */
-    colorsRenderer: function(sortedColors, cls) {
-        var result;
-        if (_.isUndefined(sortedColors)) {
-            result = 'Loading...';
-        }
-        else {
-            var colors = _.map(sortedColors, function(color) {
-                var colorClass = color.label.toLowerCase().replace(" ", "-");
-                var hiddenClass = '';
-                if (color.count == 0) {
-                    hiddenClass = Constants.CLASS.HIDDEN;
-                }
-                return '<div class="status-color ' + colorClass + ' ' + hiddenClass + '">' + color.count + '</div>'
-            });
-            result = '<div class="status-colors">' + colors.join('') + '</div>'
-        }
-        return result;
+    colorsRenderer: function(value, cls) {
+        return '<div class="status-color ' + cls + '">' + value + '</div>';
     }
+
+    /*
+    addGrid: function(store) {
+        var gridboard = this.down('rallygridboard');
+        if (gridboard) {
+            this.remove(gridboard);
+        }
+
+        var modelNames = ['hierarchicalrequirement'];
+        var context = this.getContext();
+
+        var pageFilters = [];
+        var timeboxScope = this.getContext().getTimeboxScope();
+        if (timeboxScope) {
+            pageFilters.push(timeboxScope.getQueryFilter());
+        }
+
+        Ext.create('Rally.data.wsapi.TreeStoreBuilder').build({
+            models: modelNames,
+            autoLoad: false,
+            enableHierarchy: false,
+            filters: pageFilters,
+            listeners: {
+                scope: this,
+                load: function(store, node, records) {
+                    MetricsManager.addMetrics(records);
+                }
+            },
+            fetch: Constants.PORTFOLIO_ITEM_FETCH_FIELDS
+        }).then({
+            success: function(store) {
+                var me = this;
+                this.add({
+                    xtype: 'rallygridboard',
+                    context: this.getContext(),
+                    modelNames: modelNames,
+                    toggleState: 'grid',
+                    plugins: [{
+                            ptype: 'rallygridboardinlinefiltercontrol',
+                            inlineFilterButtonConfig: {
+                                stateful: false,
+                                stateId: context.getScopedStateId('feature-filters'),
+                                modelNames: modelNames,
+                                inlineFilterPanelConfig: {
+                                    quickFilterPanelConfig: {
+                                        // TODO (tj) tags
+                                        defaultFields: [
+                                            'ArtifactSearch',
+                                            'Owner',
+                                            'ScheduleState'
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            ptype: 'rallygridboardfieldpicker',
+                            headerPosition: 'left',
+                            modelNames: modelNames,
+                            stateful: true,
+                            stateId: context.getScopedStateId('feature-columns')
+                        },
+                        {
+                            ptype: 'tslegendgridboardplugin',
+                            headerPosition: 'right',
+                            showInGridMode: true
+                        }
+                    ],
+                    gridConfig: {
+                        store: store,
+                        storeConfig: {
+                            // page-level filters must be set in the store config to allow them to merge with
+                            // any changes made in the `rallygridboardinlinefiltercontrol`
+                            filters: pageFilters
+                        },
+                        enabledEditing: true,
+                        shouldShowRowActionsColumn: true,
+                        enableRanking: false,
+                        enableBulkEdit: false,
+                        alwaysShowDefaultColumns: false, // Otherwise you get 2 copies of the `derived` columns
+                        stateful: false,
+                        stateId: context.getScopedStateId('grid-state'),
+                        listeners: {
+                            scope: this,
+                            cellclick: function(grid, td, cellIndex, record, tr, rowIndex, event) {
+                                // If this is a status color cell, show the dependencies popover
+                                // TODO (tj) not a big fan of using CSS classes to determine column, but didn't
+                                // see another way to get column from cellclick event?
+                                if (Ext.query('.' + Constants.CLASS.STATUS_COLORS, td).length > 0) {
+                                    // TODO (tj) Any per row data?
+                                }
+                            }
+                        },
+                        columnCfgs: this.getColumns(),
+                        derivedColumns: this.getDerivedColumns()
+                    },
+                    height: this.getHeight()
+                });
+            },
+            scope: this
+        });
+    },
+    */
 });

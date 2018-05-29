@@ -10,6 +10,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
         return _loadDependencies(records)
             .then({
                 success: function(results) {
+                    // Results is an array of all of the 
                     var store = Ext.create('Rally.data.custom.Store', {
                         data: results
                     });
@@ -32,38 +33,44 @@ Ext.define('MetricsManager', function(MetricsManager) {
             var predecessors = [];
             if (predecessorsRef.Count > 0) {
                 predecessors = record
-                    .getCollection('Predecessors')
-                    .load()
-                    .then(function(predecessors) {
-                        record.set('__Predecessors', predecessors);
-                        _.forEach(predecessors, function(item) {
-                            item.set('__PrimaryStory', record);
-                            storeData.push(item);
-                        });
+                    .getCollection('Predecessors', {
+                        fetch: Constants.STORY_FETCH_FIELDS
+                    })
+                    .load().then(function(results) {
+                        return results;
                     });
             }
             var successors = [];
             if (successorsRef.Count > 0) {
                 successors = record
-                    .getCollection('Successors')
+                    .getCollection('Successors', {
+                        fetch: Constants.STORY_FETCH_FIELDS
+                    })
                     .load()
-                    .then(function(successors) {
-                        record.set('__Successors', predecessors);
-                        _.forEach(successors, function(item) {
-                            item.set('__PrimaryStory', record);
-                            storeData.push(item);
-                        });
-                    });
             }
-            return Deft.promise.Promise
-                .all([predecessors, successors])
+
+            return Deft.promise.Promise.all([predecessors, successors])
                 .then({
-                    success: function(dependencies) {
-                        return storeData;
+                    scope: this,
+                    success: function(results) {
+                        var rows = _.zip([record], results[0], results[1]);
+                        return _.map(rows, function(row) {
+                            var result = {};
+                            result[Constants.ID.STORY] = record;
+                            result[Constants.ID.PREDECESSOR] = row[1];
+                            result[Constants.ID.SUCCESSOR] = row[2];
+                            return result;
+                        });
                     }
                 })
         });
-        return Deft.promise.Promise.all(dependentPromises);
+
+        // TODO (tj) sorting by primary story?
+        return Deft.promise.Promise.all(dependentPromises).then({
+            success: function(results) {
+                return _.flatten(results);
+            }
+        })
     }
 
     function splitColors(record, colors, relation, metric) {

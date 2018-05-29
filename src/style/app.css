@@ -1,8 +1,8 @@
-.app {
-}
+.app {}
+
 .tsinfolink {
-    position:absolute;
-    right:0px;
+    position: absolute;
+    right: 0px;
     width: 14px;
     height: 14px;
     border-radius: 7px;
@@ -22,7 +22,7 @@
 }
 
 .status-colors {
-    display:inline-flex;
+    display: inline-flex;
     cursor: pointer;
 }
 
@@ -31,11 +31,11 @@
     border-radius: 50px;
 }
 
-.late {
+.error {
     background-color: #F66349;
 }
 
-.at-risk {
+.warning {
     background-color: #FAD200;
 }
 

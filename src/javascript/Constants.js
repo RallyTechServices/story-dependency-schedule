@@ -1,15 +1,17 @@
 /* global Ext */
 Ext.define('Constants', function(Constants) {
     return {
-        statics: {
-            STORY_FETCH_FIELDS: ['Predecessors', 'Successors'],
+        statics: { // TODO (tj) Feature configurable
+            STORY_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Iteration', 'Feature', 'StartDate'],
             CLASS: {
-                PREDECESSORS: 'predecessors',
-                SUCCESSORS: 'successors',
-                STATUS_COLORS: 'status-colors',
-                PERCENT_DONE_BY_STORY_COUNT: 'percent-done-by-story-count',
-                PERCENT_DONE_BY_STORY_PLAN_ESTIMATE: 'percent-done-by-story-plan-estimate',
-                HIDDEN: 'hidden'
+                OK: 'ok',
+                WARNING: 'warning',
+                ERROR: 'error',
+            },
+            ID: {
+                STORY: 'STORY',
+                PREDECESSOR: 'PREDECESSOR',
+                SUCCESSOR: 'SUCCESSOR'
             },
             STATUS_LABEL_ORDER: [{
                     label: 'Late',
@@ -39,6 +41,9 @@ Ext.define('Constants', function(Constants) {
             ],
             SETTINGS: {
                 PORTFOLIO_ITEM_TYPE_NAME: 'portfolioItemTypeName'
+            },
+            LABEL: {
+                UNSCHEDULED: 'Unscheduled'
             }
         }
     }
