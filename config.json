@@ -6,9 +6,6 @@
     "artifact": "",
     "javascript": [
         "src/javascript/Constants.js",
-        "src/javascript/Overrides.js",
-        "src/javascript/Legend.js",
-        "src/javascript/LegendGridboardPlugin.js",
         "src/javascript/MetricsManager.js",
         "src/javascript/app.js"
     ]

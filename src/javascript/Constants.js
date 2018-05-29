@@ -13,35 +13,6 @@ Ext.define('Constants', function(Constants) {
                 PREDECESSOR: 'PREDECESSOR',
                 SUCCESSOR: 'SUCCESSOR'
             },
-            STATUS_LABEL_ORDER: [{
-                    label: 'Late',
-                    hex: '#F66349',
-                    count: 0
-                },
-                {
-                    label: 'At Risk',
-                    hex: '#FAD200',
-                    count: 0
-                },
-                {
-                    label: 'Not Started',
-                    hex: '#E0E0E0',
-                    count: 0
-                },
-                {
-                    label: 'On Track',
-                    hex: '#8DC63F',
-                    count: 0
-                },
-                {
-                    label: 'Complete',
-                    hex: '#D1D1D1',
-                    count: 0
-                }
-            ],
-            SETTINGS: {
-                PORTFOLIO_ITEM_TYPE_NAME: 'portfolioItemTypeName'
-            },
             LABEL: {
                 UNSCHEDULED: 'Unscheduled'
             }
