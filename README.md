@@ -2,10 +2,10 @@
 
 ## Summary/Description
 
-![screenshot](./images/screenshot.png "This is an example")
+![screenshot](./screenshot.png "This is an example")
 
 Show stories and their dependencies. Color code the dependencies based on their iteration
-schedule. A predecessor story in an iteration after the primary story is 
+schedule. The app respects page-level timebox filtering.
 
 * Red - predecessor story is scheduled in an iteration after the successor
 * Yellow - predecessor story is scheduled in the same iteration as the successor
