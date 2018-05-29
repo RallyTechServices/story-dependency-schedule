@@ -29,8 +29,44 @@ Ext.define("CArABU.app.TSApp", {
         this.launch();
     },
 
+    initLowestPortfolioItemTypeName: function() {
+        return Ext.create('Rally.data.wsapi.Store', {
+            model: Ext.identityFn('TypeDefinition'),
+            fetch: ['Name', 'Ordinal', 'TypePath'],
+            sorters: {
+                property: 'Ordinal',
+                direction: 'ASC'
+            },
+            filters: [{
+                    property: 'Creatable',
+                    operator: '=',
+                    value: 'true'
+                },
+                {
+                    property: 'Parent.Name',
+                    operator: '=',
+                    value: 'Portfolio Item'
+                }
+            ]
+        }).load().then({
+            scope: this,
+            success: function(results) {
+                this.lowestPortfolioItemTypeName = results[0].get('Name');
+                this.storyFetchFields = Constants.STORY_FETCH_FIELDS;
+                this.storyFetchFields.push(this.lowestPortfolioItemTypeName);
+            }
+        });
+    },
+
+    getLowestPortfolioItemTypeName: function() {
+        return this.lowestPortfolioItemTypeName || 'Feature'
+    },
+
     launch: function() {
-        this.loadPrimaryStories();
+        this.initLowestPortfolioItemTypeName().then({
+            scope: this,
+            success: this.loadPrimaryStories
+        });
     },
 
     loadPrimaryStories: function() {
@@ -55,7 +91,7 @@ Ext.define("CArABU.app.TSApp", {
                         })
                 }
             },
-            fetch: Constants.STORY_FETCH_FIELDS
+            fetch: this.storyFetchFields
         });
     },
 
@@ -157,10 +193,11 @@ Ext.define("CArABU.app.TSApp", {
             },
             {
                 xtype: 'gridcolumn',
-                text: 'Feature',
+                text: this.lowestPortfolioItemTypeName,
+                scope: this,
                 renderer: function(value, meta, record) {
                     try {
-                        return record.get(dataIndex).get('Feature').Name;
+                        return record.get(dataIndex).get(this.lowestPortfolioItemTypeName).Name;
                     }
                     catch (exception) {
                         return '';
@@ -275,6 +312,7 @@ Ext.define("CArABU.app.TSApp", {
             }
             else if (!dependencyIteration && !primaryIteration) {
                 // display nothing
+                dependencyIterationName = '';
             }
 
             result = this.colorsRenderer(dependencyIterationName, colorClass);

@@ -12,7 +12,7 @@ schedule. A predecessor story in an iteration after the primary story is
 * Green - predecessor story is scheduled in an iteration before the successor
 
 ## Test Plan
-* Renamed 'Feature'
+* PASS - Renamed 'Feature'
 * PASS - Primary story has no iteration set
 * PASS - Predecessor has no iteration set
 * PASS - Successor has no iteration set

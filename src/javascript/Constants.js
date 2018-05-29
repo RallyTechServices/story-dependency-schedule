@@ -1,8 +1,8 @@
 /* global Ext */
 Ext.define('Constants', function(Constants) {
     return {
-        statics: { // TODO (tj) Feature configurable
-            STORY_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Iteration', 'Feature', 'StartDate'],
+        statics: {
+            STORY_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Iteration', 'StartDate'],
             CLASS: {
                 OK: 'ok',
                 WARNING: 'warning',

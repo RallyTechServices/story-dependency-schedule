@@ -34,7 +34,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
             if (predecessorsRef.Count > 0) {
                 predecessors = record
                     .getCollection('Predecessors', {
-                        fetch: Constants.STORY_FETCH_FIELDS
+                        fetch: Rally.getApp().storyFetchFields
                     })
                     .load().then(function(results) {
                         return results;
@@ -44,7 +44,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
             if (successorsRef.Count > 0) {
                 successors = record
                     .getCollection('Successors', {
-                        fetch: Constants.STORY_FETCH_FIELDS
+                        fetch: Rally.getApp().storyFetchFields
                     })
                     .load()
             }
