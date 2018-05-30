@@ -3,6 +3,7 @@ Ext.define('Constants', function(Constants) {
     return {
         statics: {
             STORY_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Iteration', 'StartDate'],
+            FEATURE_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Release', 'ReleaseStartDate'],
             CLASS: {
                 OK: 'ok',
                 WARNING: 'warning',
@@ -14,7 +15,12 @@ Ext.define('Constants', function(Constants) {
                 SUCCESSOR: 'SUCCESSOR'
             },
             LABEL: {
-                UNSCHEDULED: 'Unscheduled'
+                UNSCHEDULED: 'Unscheduled',
+                DEPENDENCY_TYPE: 'Dependency Type',
+            },
+            SETTING: {
+                DEPENDENCY_TYPE: 'DEPENDENCY_TYPE',
+                STORY: 'STORY'
             }
         }
     }
