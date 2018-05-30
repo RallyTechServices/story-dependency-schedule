@@ -5,6 +5,7 @@
     "className": "CArABU.app.TSApp",
     "artifact": "",
     "javascript": [
+        "src/javascript/FieldPicker.js",
         "src/javascript/Constants.js",
         "src/javascript/MetricsManager.js",
         "src/javascript/app.js"
