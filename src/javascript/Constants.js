@@ -8,6 +8,7 @@ Ext.define('Constants', function(Constants) {
                 OK: 'ok',
                 WARNING: 'warning',
                 ERROR: 'error',
+                UNKNOWN: 'unknown'
             },
             ID: {
                 STORY: 'STORY',

@@ -7,26 +7,45 @@
 Show stories and their dependencies. Color code the dependencies based on their iteration
 schedule. The app respects page-level timebox filtering.
 
-* Red - predecessor story is scheduled in an iteration after the successor
-* Yellow - predecessor story is scheduled in the same iteration as the successor
-* Green - predecessor story is scheduled in an iteration before the successor
+The app can also be configured to show Feature dependencies and colors dependencies based
+on release start dates. The app will automatically detect the name of the lowest level
+portfolio item name ( Feature is the default ), so this will work in environments that have
+customized portfolio item names.
+
+### Colors Used:
+* Primary Artifact Colors
+  * Grey - primary artifact is unscheduled. No colors used for predecessors or successors
+* Predecessor Colors
+  * Red - predecessor is scheduled AFTER the primary artifact
+  * Yellow - predecessor is scheduled in the same timebox as the primary artifact
+* Successor Colors
+  * Red - successor is scheduled BEFORE the primary artifact
+  * Yellow - successor is scheduled in the same timebox as the primary artifact
+  * Grey - successor is unscheduled 
 
 ## Test Plan
-* PASS - Renamed 'Feature'
-* PASS - Primary story has no iteration set
-* PASS - Predecessor has no iteration set
-* PASS - Successor has no iteration set
-* PASS - More predecessors than successors
-* PASS - More successors than predecessors
-* PASS - No predecessors or successors
-* PASS - Successors but no predecessors
-* PASS - Precessors but no successors
-* PASS - Predecessor before Primary
-* PASS - Predecessor same as Primary
-* PASS - Predecessor after Primary
-* PASS - Successor before Primary
-* PASS - Successor same as Primary
-* PASS - Successor after Primary
+* Story View
+  * PASS - Renamed 'Feature'
+  * PASS - Primary story has no iteration set
+  * PASS - Predecessor has no iteration set
+  * PASS - Successor has no iteration set
+  * PASS - More predecessors than successors
+  * PASS - More successors than predecessors
+  * PASS - No predecessors or successors
+  * PASS - Successors but no predecessors
+  * PASS - Precessors but no successors
+  * PASS - Predecessor before Primary
+  * PASS - Predecessor same as Primary
+  * PASS - Predecessor after Primary
+  * PASS - Successor before Primary
+  * PASS - Successor same as Primary
+  * PASS - Successor after Primary
+  * PASS - ID, Name, Project, Iteration, Feature columns show correct data for Stories
+  * PASS - Color coding rules followed
+
+* Feature View 
+  * PASS - All of above tests for Features
+  * PASS - ID, Name, Project, Release columns show correct data for Features
 
 ## Development Notes
 

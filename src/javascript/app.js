@@ -246,7 +246,7 @@ Ext.define("CArABU.app.TSApp", {
         }
         catch (ex) {
             primaryIterationName = Constants.LABEL.UNSCHEDULED;
-            colorClass = Constants.CLASS.ERROR;
+            colorClass = Constants.CLASS.UNKNOWN;
         }
 
         return this.colorsRenderer(primaryIterationName, colorClass);
@@ -337,7 +337,7 @@ Ext.define("CArABU.app.TSApp", {
             else if (!dependencyIteration && primaryIteration) {
                 // No dependency iteration when there is a primary. Highlight as error
                 dependencyIterationName = Constants.LABEL.UNSCHEDULED;
-                colorClass = Constants.CLASS.ERROR;
+                colorClass = Constants.CLASS.UNKNOWN;
             }
             else if (dependencyIteration && !primaryIteration) {
                 // dependency but no primary, don't highlight the iteration name
