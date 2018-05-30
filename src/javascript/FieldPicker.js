@@ -67,7 +67,7 @@ Ext.define('CA.technicalservices.userutilities.FieldPicker', {
         this.callParent(arguments);
     },
     getFields: function() {
-        return this._fields || this.alwaysSelectedValues;
+        return _.union(this._fields || [], this.alwaysSelectedValues);
     },
     _getPickerConfig: function() {
         var pickerConfig;
