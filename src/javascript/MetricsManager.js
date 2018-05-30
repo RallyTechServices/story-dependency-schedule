@@ -26,7 +26,10 @@ Ext.define('MetricsManager', function(MetricsManager) {
      * has a __PrimaryStory reference set.
      */
     function _loadDependencies(records) {
-        var storeData = [];
+        if (!records || records.length == 0) {
+            return Deft.promise.Promise.when([]);
+        }
+
         var dependentPromises = _.map(records, function(record) {
             var predecessorsRef = record.get('Predecessors');
             var successorsRef = record.get('Successors');
@@ -34,6 +37,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
             if (predecessorsRef.Count > 0) {
                 predecessors = record
                     .getCollection('Predecessors', {
+                        limit: Infinity,
                         fetch: Rally.getApp().artifactFetchFields
                     })
                     .load().then(function(results) {
@@ -44,6 +48,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
             if (successorsRef.Count > 0) {
                 successors = record
                     .getCollection('Successors', {
+                        limit: Infinity,
                         fetch: Rally.getApp().artifactFetchFields
                     })
                     .load()

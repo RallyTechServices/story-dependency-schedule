@@ -8,16 +8,12 @@ Ext.define("CArABU.app.TSApp", {
     },
     layout: {
         type: 'vbox',
-        align: 'stretch'
+        align: 'stretch',
     },
-    items: [{
-        xtype: 'container',
-        layout: 'hbox',
-        items: [{
-            xtype: 'container',
-            flex: 1
-        }]
-    }],
+    items: [
+        { xtype: 'container', itemId: 'controlsArea' },
+        { xtype: 'container', itemId: 'filtersArea' },
+    ],
     integrationHeaders: {
         name: "CArABU.app.TSApp"
     },
@@ -77,25 +73,36 @@ Ext.define("CArABU.app.TSApp", {
     launch: function() {
         this.initLowestPortfolioItemTypeName().then({
             scope: this,
-            success: this.loadPrimaryStories
+            success: function() {
+                this.model = 'hierarchicalrequirement';
+                if (this.showFeatureDependencies()) {
+                    this.model = 'portfolioitem/' + this.getLowestPortfolioItemTypeName();
+                }
+                this.addFilters(this.model);
+                this.loadPrimaryStories(this.model);
+            }
         });
     },
 
-    loadPrimaryStories: function() {
-        var pageFilters = [];
+    loadPrimaryStories: function(model) {
+        this.setLoading('Loading...');
+        var filters = [];
+
         var timeboxScope = this.getContext().getTimeboxScope();
         if (timeboxScope) {
-            pageFilters.push(timeboxScope.getQueryFilter());
+            filters.push(timeboxScope.getQueryFilter());
         }
 
-        var model = 'hierarchicalrequirement';
-        if (this.showFeatureDependencies()) {
-            model = 'portfolioitem/' + this.getLowestPortfolioItemTypeName();
+        var advancedFilters = this.getFiltersFromButton();
+        if (advancedFilters) {
+            filters.push(advancedFilters);
         }
+
         Ext.create('Rally.data.wsapi.Store', {
             model: model,
             autoLoad: true,
-            filters: pageFilters,
+            filters: filters,
+            limit: Infinity,
             listeners: {
                 scope: this,
                 load: function(store, records) {
@@ -104,12 +111,45 @@ Ext.define("CArABU.app.TSApp", {
                             scope: this,
                             success: function(store) {
                                 this.addGrid(store)
+                                this.setLoading(false);
                             }
                         })
                 }
             },
             fetch: this.showFeatureDependencies() ? Constants.FEATURE_FETCH_FIELDS : this.artifactFetchFields
         });
+    },
+
+    addFilters: function(model) {
+        var controlsArea = this.down('#controlsArea');
+        controlsArea.add({
+            xtype: 'rallyinlinefilterbutton',
+            modelNames: [model],
+            context: this.getContext(),
+            stateful: true,
+            stateId: 'grid-filters-1',
+            listeners: {
+                inlinefilterready: this.addInlineFilterPanel,
+                inlinefilterchange: function() {
+                    this.loadPrimaryStories(this.model);
+                },
+                scope: this
+            }
+        });
+
+    },
+
+    addInlineFilterPanel: function(panel) {
+        this.down('#filtersArea').add(panel);
+    },
+
+    getFiltersFromButton: function() {
+        var filterButton = this.down('rallyinlinefilterbutton');
+        if (filterButton && filterButton.inlineFilterPanel && filterButton.getWsapiFilter()) {
+            return filterButton.getWsapiFilter();
+        }
+
+        return null;
     },
 
     addGrid: function(store) {
@@ -121,6 +161,7 @@ Ext.define("CArABU.app.TSApp", {
         this.add({
             xtype: 'rallygrid',
             itemId: 'grid',
+            width: this.getWidth(),
             shouldShowRowActionsColumn: false,
             store: store,
             columnCfgs: this.getColumns(),
