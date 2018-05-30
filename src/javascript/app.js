@@ -3,6 +3,9 @@ Ext.define("CArABU.app.TSApp", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     defaults: { margin: 10 },
+    defaultSettings: {
+        DEPENDENCY_TYPE: Constants.SETTING.STORY
+    },
     layout: {
         type: 'vbox',
         align: 'stretch'
@@ -52,10 +55,19 @@ Ext.define("CArABU.app.TSApp", {
             scope: this,
             success: function(results) {
                 this.lowestPortfolioItemTypeName = results[0].get('Name');
-                this.storyFetchFields = Constants.STORY_FETCH_FIELDS;
-                this.storyFetchFields.push(this.lowestPortfolioItemTypeName);
+                if (this.showFeatureDependencies()) {
+                    this.artifactFetchFields = Constants.FEATURE_FETCH_FIELDS;
+                }
+                else {
+                    this.artifactFetchFields = Constants.STORY_FETCH_FIELDS;
+                    this.artifactFetchFields.push(this.lowestPortfolioItemTypeName || 'Feature');
+                }
             }
         });
+    },
+
+    showFeatureDependencies: function() {
+        return this.getSetting(Constants.SETTING.DEPENDENCY_TYPE) != Constants.SETTING.STORY;
     },
 
     getLowestPortfolioItemTypeName: function() {
@@ -75,8 +87,13 @@ Ext.define("CArABU.app.TSApp", {
         if (timeboxScope) {
             pageFilters.push(timeboxScope.getQueryFilter());
         }
+
+        var model = 'hierarchicalrequirement';
+        if (this.showFeatureDependencies()) {
+            model = 'portfolioitem/' + this.getLowestPortfolioItemTypeName();
+        }
         Ext.create('Rally.data.wsapi.Store', {
-            model: 'hierarchicalrequirement',
+            model: model,
             autoLoad: true,
             filters: pageFilters,
             listeners: {
@@ -91,7 +108,7 @@ Ext.define("CArABU.app.TSApp", {
                         })
                 }
             },
-            fetch: this.storyFetchFields
+            fetch: this.showFeatureDependencies() ? Constants.FEATURE_FETCH_FIELDS : this.artifactFetchFields
         });
     },
 
@@ -119,7 +136,7 @@ Ext.define("CArABU.app.TSApp", {
     getColumns: function() {
         return [{
                 xtype: 'gridcolumn',
-                text: 'Story',
+                text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : 'Story',
                 columns: this.getSubColumns(Constants.ID.STORY)
             },
             {
@@ -135,7 +152,7 @@ Ext.define("CArABU.app.TSApp", {
         ]
     },
     getSubColumns: function(dataIndex) {
-        return [{
+        var columns = [{
                 xtype: 'gridcolumn',
                 text: 'ID',
                 renderer: function(value, meta, record) {
@@ -173,7 +190,7 @@ Ext.define("CArABU.app.TSApp", {
             },
             {
                 xtype: 'gridcolumn',
-                text: 'Iteration',
+                text: this.showFeatureDependencies() ? 'Release' : 'Iteration',
                 scope: this,
                 renderer: function(value, meta, record) {
                     var result;
@@ -191,7 +208,11 @@ Ext.define("CArABU.app.TSApp", {
                     return result;
                 }
             },
-            {
+        ];
+
+        if (!this.showFeatureDependencies()) {
+            // Showing story level dependencies, add a story parent 'Feature' column.
+            columns.push({
                 xtype: 'gridcolumn',
                 text: this.lowestPortfolioItemTypeName,
                 scope: this,
@@ -203,18 +224,29 @@ Ext.define("CArABU.app.TSApp", {
                         return '';
                     }
                 }
-            },
-        ]
+            })
+        }
+
+        return columns;
+    },
+
+    getTimeboxField: function() {
+        return this.showFeatureDependencies() ? 'Release' : 'Iteration';
+    },
+
+    getStartDateField: function() {
+        return this.showFeatureDependencies() ? 'ReleaseStartDate' : 'StartDate';
     },
 
     primaryIterationRenderer: function(row) {
+        var timeboxField = this.getTimeboxField();
         var colorClass = Constants.CLASS.OK;
         try {
-            var primaryIterationName = row.get(Constants.ID.STORY).get('Iteration').Name;
+            var primaryIterationName = row.get(Constants.ID.STORY).get(timeboxField).Name;
         }
         catch (ex) {
             primaryIterationName = Constants.LABEL.UNSCHEDULED;
-            colorClass = Constants.CLASS.ERROR;
+            colorClass = Constants.CLASS.UNKNOWN;
         }
 
         return this.colorsRenderer(primaryIterationName, colorClass);
@@ -222,20 +254,22 @@ Ext.define("CArABU.app.TSApp", {
 
     predecessorIterationRenderer: function(row) {
         var result;
+        var timeboxField = this.getTimeboxField();
+        var startDateField = this.getStartDateField()
         var primaryStory = row.get(Constants.ID.STORY);
         var predecessor = row.get(Constants.ID.PREDECESSOR);
 
         if (predecessor) {
             var colorClass = Constants.CLASS.OK;
-            var primaryIteration = primaryStory.get('Iteration');
-            var predecessorIteration = predecessor.get('Iteration');
+            var primaryIteration = primaryStory.get(timeboxField);
+            var predecessorIteration = predecessor.get(timeboxField);
 
             var predecessorIterationName;
 
             if (predecessorIteration && primaryIteration) {
                 predecessorIterationName = predecessorIteration.Name;
-                var primaryStartDate = primaryIteration.StartDate;
-                var predecessorStartDate = predecessorIteration.StartDate;
+                var primaryStartDate = primaryIteration[startDateField];
+                var predecessorStartDate = predecessorIteration[startDateField];
 
                 if (predecessorStartDate < primaryStartDate) {
                     // Predecessor scheduled before primary. OK
@@ -271,20 +305,22 @@ Ext.define("CArABU.app.TSApp", {
 
     successorIterationRenderer: function(row) {
         var result;
+        var timeboxField = this.getTimeboxField();
+        var startDateField = this.getStartDateField();
         var primaryStory = row.get(Constants.ID.STORY);
         var dependency = row.get(Constants.ID.SUCCESSOR);
 
         if (dependency) {
             var colorClass = Constants.CLASS.OK;
-            var primaryIteration = primaryStory.get('Iteration');
-            var dependencyIteration = dependency.get('Iteration');
+            var primaryIteration = primaryStory.get(timeboxField);
+            var dependencyIteration = dependency.get(timeboxField);
 
             var dependencyIterationName;
 
             if (dependencyIteration && primaryIteration) {
                 dependencyIterationName = dependencyIteration.Name;
-                var primaryStartDate = primaryIteration.StartDate;
-                var dependencyStartDate = dependencyIteration.StartDate;
+                var primaryStartDate = primaryIteration[startDateField];
+                var dependencyStartDate = dependencyIteration[startDateField];
 
                 if (dependencyStartDate > primaryStartDate) {
                     // dependency scheduled before primary. OK
@@ -301,7 +337,7 @@ Ext.define("CArABU.app.TSApp", {
             else if (!dependencyIteration && primaryIteration) {
                 // No dependency iteration when there is a primary. Highlight as error
                 dependencyIterationName = Constants.LABEL.UNSCHEDULED;
-                colorClass = Constants.CLASS.ERROR;
+                colorClass = Constants.CLASS.UNKNOWN;
             }
             else if (dependencyIteration && !primaryIteration) {
                 // dependency but no primary, don't highlight the iteration name
@@ -324,5 +360,25 @@ Ext.define("CArABU.app.TSApp", {
      */
     colorsRenderer: function(value, cls) {
         return '<div class="status-color ' + cls + '">' + value + '</div>';
+    },
+
+    getSettingsFields: function() {
+        var store = Ext.create('Rally.data.custom.Store', {
+            data: [{
+                Name: 'User Story',
+                Value: Constants.SETTING.STORY,
+            }, {
+                Name: this.getLowestPortfolioItemTypeName(),
+                Value: this.getLowestPortfolioItemTypeName()
+            }]
+        });
+        return [{
+            xtype: 'rallycombobox',
+            name: Constants.SETTING.DEPENDENCY_TYPE,
+            label: Constants.LABEL.DEPENDENCY_TYPE,
+            displayField: 'Name',
+            valueField: 'Value',
+            store: store
+        }];
     }
 });
