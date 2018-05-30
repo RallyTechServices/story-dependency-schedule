@@ -2,8 +2,8 @@
 Ext.define('Constants', function(Constants) {
     return {
         statics: {
-            STORY_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Iteration', 'StartDate'],
-            FEATURE_FETCH_FIELDS: ['Predecessors', 'Successors', 'FormattedID', 'Name', 'Project', 'Release', 'ReleaseStartDate'],
+            DEFAULT_COLUMNS: ['FormattedID', 'Name', 'Project'],
+            ARTIFACT_FETCH_FIELDS: ['Predecessors', 'Successors', 'Release', 'ReleaseStartDate', 'Iteration', 'StartDate', 'Name'],
             CLASS: {
                 OK: 'ok',
                 WARNING: 'warning',

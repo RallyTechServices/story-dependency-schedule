@@ -8,20 +8,15 @@ Ext.define("CArABU.app.TSApp", {
     },
     layout: {
         type: 'vbox',
-        align: 'stretch'
+        align: 'stretch',
     },
-    items: [{
-        xtype: 'container',
-        layout: 'hbox',
-        items: [{
-            xtype: 'container',
-            flex: 1
-        }]
-    }],
+    items: [
+        { xtype: 'container', itemId: 'controlsArea' },
+        { xtype: 'container', itemId: 'filtersArea' },
+    ],
     integrationHeaders: {
         name: "CArABU.app.TSApp"
     },
-    piTypePath: undefined,
 
     onTimeboxScopeChange: function(newTimeboxScope) {
         this.callParent(arguments);
@@ -29,7 +24,7 @@ Ext.define("CArABU.app.TSApp", {
         // to do that with a rallygridboard and preserve the timebox filter AND any existing
         // advanced filters from the filter plugin. Instead, if the page level timebox changes, just
         // relaunch the app.
-        this.launch();
+        this.loadPrimaryStories(this.modelName);
     },
 
     initLowestPortfolioItemTypeName: function() {
@@ -54,14 +49,7 @@ Ext.define("CArABU.app.TSApp", {
         }).load().then({
             scope: this,
             success: function(results) {
-                this.lowestPortfolioItemTypeName = results[0].get('Name');
-                if (this.showFeatureDependencies()) {
-                    this.artifactFetchFields = Constants.FEATURE_FETCH_FIELDS;
-                }
-                else {
-                    this.artifactFetchFields = Constants.STORY_FETCH_FIELDS;
-                    this.artifactFetchFields.push(this.lowestPortfolioItemTypeName || 'Feature');
-                }
+                return results[0].get('Name');
             }
         });
     },
@@ -77,25 +65,49 @@ Ext.define("CArABU.app.TSApp", {
     launch: function() {
         this.initLowestPortfolioItemTypeName().then({
             scope: this,
-            success: this.loadPrimaryStories
-        });
+            success: function(name) {
+                this.lowestPortfolioItemTypeName = name;
+                this.modelName = 'hierarchicalrequirement';
+                if (this.showFeatureDependencies()) {
+                    this.modelName = 'portfolioitem/' + this.getLowestPortfolioItemTypeName();
+                }
+            }
+        }).then({
+            scope: this,
+            success: function() {
+                return this.loadModel(this.modelName);
+            }
+        }).then({
+            scope: this,
+            success: function(model) {
+                this.model = model;
+                this.addFilters(this.modelName);
+                this.loadPrimaryStories(this.modelName);
+            }
+        })
     },
 
-    loadPrimaryStories: function() {
-        var pageFilters = [];
+    loadPrimaryStories: function(modelName) {
+        this.setLoading('Loading...');
+        this.artifactFetchFields = this.getFieldNames().concat(Constants.ARTIFACT_FETCH_FIELDS);
+
+        var filters = [];
+
         var timeboxScope = this.getContext().getTimeboxScope();
         if (timeboxScope) {
-            pageFilters.push(timeboxScope.getQueryFilter());
+            filters.push(timeboxScope.getQueryFilter());
         }
 
-        var model = 'hierarchicalrequirement';
-        if (this.showFeatureDependencies()) {
-            model = 'portfolioitem/' + this.getLowestPortfolioItemTypeName();
+        var advancedFilters = this.getFiltersFromButton();
+        if (advancedFilters) {
+            filters.push(advancedFilters);
         }
+
         Ext.create('Rally.data.wsapi.Store', {
-            model: model,
+            model: modelName,
             autoLoad: true,
-            filters: pageFilters,
+            filters: filters,
+            limit: Infinity,
             listeners: {
                 scope: this,
                 load: function(store, records) {
@@ -104,12 +116,66 @@ Ext.define("CArABU.app.TSApp", {
                             scope: this,
                             success: function(store) {
                                 this.addGrid(store)
+                                this.setLoading(false);
                             }
                         })
                 }
             },
-            fetch: this.showFeatureDependencies() ? Constants.FEATURE_FETCH_FIELDS : this.artifactFetchFields
+            fetch: this.artifactFetchFields
         });
+    },
+
+    addFilters: function(modelName) {
+        var controlsArea = this.down('#controlsArea');
+        controlsArea.add({
+            xtype: 'rallyinlinefilterbutton',
+            modelNames: [modelName],
+            context: this.getContext(),
+            stateful: true,
+            stateId: 'grid-filters-1',
+            listeners: {
+                inlinefilterready: this.addInlineFilterPanel,
+                inlinefilterchange: function() {
+                    this.loadPrimaryStories(this.modelName);
+                },
+                scope: this
+            }
+        });
+        var alwaysSelectedColumns = ['FormattedID', 'Name'];
+        if (this.showFeatureDependencies()) {
+            alwaysSelectedColumns.push('Release')
+        }
+        else {
+            alwaysSelectedColumns.push('Iteration');
+        }
+        controlsArea.add({
+            xtype: 'tsfieldpickerbutton',
+            modelNames: [modelName],
+            context: this.getContext(),
+            stateful: true,
+            stateId: 'creator-grid-columns-1',
+            alwaysSelectedValues: alwaysSelectedColumns,
+            listeners: {
+                fieldsupdated: function(fields) {
+                    this.loadPrimaryStories(this.modelName);
+                },
+                scope: this
+            }
+        });
+
+    },
+
+    addInlineFilterPanel: function(panel) {
+        this.down('#filtersArea').add(panel);
+    },
+
+    getFiltersFromButton: function() {
+        var filterButton = this.down('rallyinlinefilterbutton');
+        if (filterButton && filterButton.inlineFilterPanel && filterButton.getWsapiFilter()) {
+            return filterButton.getWsapiFilter();
+        }
+
+        return null;
     },
 
     addGrid: function(store) {
@@ -121,7 +187,8 @@ Ext.define("CArABU.app.TSApp", {
         this.add({
             xtype: 'rallygrid',
             itemId: 'grid',
-            shouldShowRowActionsColumn: false,
+            width: this.getWidth(),
+            showRowActionsColumn: false,
             store: store,
             columnCfgs: this.getColumns(),
             listeners: {
@@ -131,6 +198,16 @@ Ext.define("CArABU.app.TSApp", {
                 }
             }
         })
+    },
+
+    getFieldNames: function() {
+        try {
+            var result = this.down('tsfieldpickerbutton').getFields() || Constants.DEFAULT_COLUMNS;
+        }
+        catch (ex) {
+            result = Constants.DEFAULT_COLUMNS
+        }
+        return result;
     },
 
     getColumns: function() {
@@ -152,94 +229,96 @@ Ext.define("CArABU.app.TSApp", {
         ]
     },
     getSubColumns: function(dataIndex) {
-        var columns = [{
-                xtype: 'gridcolumn',
-                text: 'ID',
-                renderer: function(value, meta, record) {
-                    try {
-                        return record.get(dataIndex).get('FormattedID');
-                    }
-                    catch (exception) {
-                        return '';
+        var selectedFieldNames = this.getFieldNames();
+        var columnCfgs = [];
+        _.forEach(selectedFieldNames, function(selectedFieldName) {
+            var cfg = this.getColumnConfigFromModel(selectedFieldName);
+            // Filter out columns that con't apply in case app was changed from story to feature view
+            if (cfg) {
+                columnCfgs.push(cfg);
+            }
+        }, this);
+        var columns = _.map(columnCfgs, function(columnCfg) {
+            var column;
+            if (columnCfg.dataIndex === 'Release' || columnCfg.dataIndex === 'Iteration') {
+                column = {
+                    xtype: 'gridcolumn',
+                    text: columnCfg.text,
+                    scope: this,
+                    renderer: function(value, meta, record) {
+                        var result;
+                        try {
+                            switch (dataIndex) {
+                                case Constants.ID.PREDECESSOR:
+                                    result = this.predecessorIterationRenderer(record, columnCfg.dataIndex);
+                                    break;
+                                case Constants.ID.SUCCESSOR:
+                                    result = this.successorIterationRenderer(record, columnCfg.dataIndex);
+                                    break;
+                                default:
+                                    result = this.primaryIterationRenderer(record, columnCfg.dataIndex);
+                                    break;
+                            }
+                        }
+                        catch (ex) {
+                            result = '';
+                        }
+                        return result;
                     }
                 }
-            },
-            {
-                xtype: 'gridcolumn',
-                text: 'Name',
-                renderer: function(value, meta, record) {
-                    try {
-                        return record.get(dataIndex).get('Name');
-                    }
-                    catch (exception) {
-                        return '';
-                    }
-                }
-            },
-            {
-                xtype: 'gridcolumn',
-                text: 'Project',
-                renderer: function(value, meta, record) {
-                    try {
-                        return record.get(dataIndex).get('Project').Name;
-                    }
-                    catch (exception) {
-                        return '';
+            }
+            else {
+                column = {
+                    xtype: 'gridcolumn',
+                    text: columnCfg.text,
+                    scope: this,
+                    renderer: function(value, meta, record) {
+                        try {
+                            var result = record.get(dataIndex).get(columnCfg.dataIndex) || '';
+                            if (Ext.isObject(result)) {
+                                result = result.Name || result._refObjectName || '';
+                            }
+                        }
+                        catch (ex) {
+                            result = '';
+                        }
+                        return result;
                     }
                 }
-            },
-            {
-                xtype: 'gridcolumn',
-                text: this.showFeatureDependencies() ? 'Release' : 'Iteration',
-                scope: this,
-                renderer: function(value, meta, record) {
-                    var result;
-                    switch (dataIndex) {
-                        case Constants.ID.PREDECESSOR:
-                            result = this.predecessorIterationRenderer(record);
-                            break;
-                        case Constants.ID.SUCCESSOR:
-                            result = this.successorIterationRenderer(record);
-                            break;
-                        default:
-                            result = this.primaryIterationRenderer(record);
-                            break;
-                    }
-                    return result;
-                }
-            },
-        ];
+            }
 
-        if (!this.showFeatureDependencies()) {
-            // Showing story level dependencies, add a story parent 'Feature' column.
-            columns.push({
-                xtype: 'gridcolumn',
-                text: this.lowestPortfolioItemTypeName,
-                scope: this,
-                renderer: function(value, meta, record) {
-                    try {
-                        return record.get(dataIndex).get(this.lowestPortfolioItemTypeName).Name;
-                    }
-                    catch (exception) {
-                        return '';
-                    }
-                }
-            })
-        }
+            return column;
+        }, this);
 
         return columns;
     },
 
-    getTimeboxField: function() {
-        return this.showFeatureDependencies() ? 'Release' : 'Iteration';
+    loadModel: function(modelName) {
+        var deferred = new Deft.promise.Deferred;
+        Rally.data.wsapi.ModelFactory.getModel({
+            type: modelName,
+            context: this.getContext(),
+            success: function(model) {
+                deferred.resolve(model);
+            }
+        });
+        return deferred.getPromise();
     },
 
-    getStartDateField: function() {
-        return this.showFeatureDependencies() ? 'ReleaseStartDate' : 'StartDate';
+    getColumnConfigFromModel: function(fieldName) {
+        var field = this.model.getField(fieldName);
+        if (_.isUndefined(field)) {
+            return null;
+        }
+        var builtConfig = Rally.ui.grid.FieldColumnFactory.getColumnConfigFromField(field, this.model);
+        return builtConfig;
     },
 
-    primaryIterationRenderer: function(row) {
-        var timeboxField = this.getTimeboxField();
+    getStartDateField: function(timeboxField) {
+        return timeboxField === 'Release' ? 'ReleaseStartDate' : 'StartDate';
+    },
+
+    primaryIterationRenderer: function(row, timeboxField) {
         var colorClass = Constants.CLASS.OK;
         try {
             var primaryIterationName = row.get(Constants.ID.STORY).get(timeboxField).Name;
@@ -252,10 +331,9 @@ Ext.define("CArABU.app.TSApp", {
         return this.colorsRenderer(primaryIterationName, colorClass);
     },
 
-    predecessorIterationRenderer: function(row) {
+    predecessorIterationRenderer: function(row, timeboxField) {
         var result;
-        var timeboxField = this.getTimeboxField();
-        var startDateField = this.getStartDateField()
+        var startDateField = this.getStartDateField(timeboxField)
         var primaryStory = row.get(Constants.ID.STORY);
         var predecessor = row.get(Constants.ID.PREDECESSOR);
 
@@ -303,10 +381,9 @@ Ext.define("CArABU.app.TSApp", {
         return result;
     },
 
-    successorIterationRenderer: function(row) {
+    successorIterationRenderer: function(row, timeboxField) {
         var result;
-        var timeboxField = this.getTimeboxField();
-        var startDateField = this.getStartDateField();
+        var startDateField = this.getStartDateField(timeboxField);
         var primaryStory = row.get(Constants.ID.STORY);
         var dependency = row.get(Constants.ID.SUCCESSOR);
 
