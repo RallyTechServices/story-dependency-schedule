@@ -138,7 +138,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: this.getViewType() + 'filters',
+            stateId: this.getViewType() + 'filters', // filters specific to type of object
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: function() {
@@ -159,7 +159,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: this.getViewType() + 'fields',
+            stateId: this.getViewType() + 'fields', // columns specific to type of object
             alwaysSelectedValues: alwaysSelectedColumns,
             listeners: {
                 fieldsupdated: function(fields) {
@@ -223,7 +223,7 @@ Ext.define("CArABU.app.TSApp", {
         return [{
                 xtype: 'gridcolumn',
                 text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : 'Story',
-                __subDataIndex: Constants.ID.STORY,
+                __subDataIndex: Constants.ID.STORY, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.STORY)
             },
             {
@@ -234,7 +234,7 @@ Ext.define("CArABU.app.TSApp", {
             {
                 xtype: 'gridcolumn',
                 text: 'Predecessor',
-                __subDataIndex: Constants.ID.PREDECESSOR,
+                __subDataIndex: Constants.ID.PREDECESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.PREDECESSOR)
             },
             {
@@ -245,7 +245,7 @@ Ext.define("CArABU.app.TSApp", {
             {
                 xtype: 'gridcolumn',
                 text: 'Successor',
-                __subDataIndex: Constants.ID.SUCCESSOR,
+                __subDataIndex: Constants.ID.SUCCESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.SUCCESSOR)
             }
         ]
@@ -288,7 +288,7 @@ Ext.define("CArABU.app.TSApp", {
                 // All other columns use the default rendering (see Overrides.js for getting to the sub-data)
                 column = columnCfg;
             }
-            column.height = 30;
+            column.height = 30; // Needed when a column is picked that has a two row title
             return column;
         }, this);
 

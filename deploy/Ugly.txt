@@ -3,13 +3,13 @@
 <head>
     <title>CATS-Story Dependency Schedule-1.0.1</title>
     <!--  (c) 2017 CA Technologies.  All Rights Reserved. -->
-    <!--  Build Date: Thu May 31 2018 18:54:35 GMT+0000 (UTC) -->
+    <!--  Build Date: Thu May 31 2018 19:00:48 GMT+0000 (UTC) -->
 
     <script type="text/javascript">
-        var APP_BUILD_DATE = "Thu May 31 2018 18:54:35 GMT+0000 (UTC)";
+        var APP_BUILD_DATE = "Thu May 31 2018 19:00:48 GMT+0000 (UTC)";
         var ARTIFACT = "";
         var BUILDER  = "ec2-user";
-        var CHECKSUM = 7493305149;
+        var CHECKSUM = 7603701191;
     </script>
 
     <script type="text/javascript" src="/apps/2.1/sdk.js"></script>
@@ -32,10 +32,14 @@
 
 .app {}
 
+/* pills for status indicators */
+
 .status-color {
     padding: 0 5px 0 5px;
     border-radius: 50px;
 }
+
+/* use the same colors as Agile Central for Late, At-Risk and Not Started */
 
 .error {
     background-color: #F66349;

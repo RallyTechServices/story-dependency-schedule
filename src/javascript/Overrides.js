@@ -1,3 +1,9 @@
+/**
+ * Allows us to use the default field renderers returned by
+ * Rally.ui.grid.FieldColumnFactory.getColumnConfigFromField() by wrapping
+ * that renderer in a function that knows how to get to the Story, Predecessor
+ * and Successor objects in our custom model.
+ */
 Ext.override(Rally.ui.grid.CellRendererFactory, {
     createRendererFunction: function(column) {
         var renderer = this.callParent(arguments);
