@@ -3,8 +3,10 @@ Ext.define("CArABU.app.TSApp", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     defaults: { margin: 10 },
-    defaultSettings: {
-        DEPENDENCY_TYPE: Constants.SETTING.STORY
+    config: {
+        defaultSettings: {
+            DEPENDENCY_TYPE: Constants.SETTING.STORY
+        }
     },
     layout: {
         type: 'vbox',
@@ -56,6 +58,10 @@ Ext.define("CArABU.app.TSApp", {
 
     showFeatureDependencies: function() {
         return this.getSetting(Constants.SETTING.DEPENDENCY_TYPE) != Constants.SETTING.STORY;
+    },
+
+    getViewType: function() {
+        return this.getSetting(Constants.SETTING.DEPENDENCY_TYPE);
     },
 
     getLowestPortfolioItemTypeName: function() {
@@ -132,7 +138,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: 'grid-filters-1',
+            stateId: this.getViewType() + 'filters', // filters specific to type of object
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: function() {
@@ -141,7 +147,7 @@ Ext.define("CArABU.app.TSApp", {
                 scope: this
             }
         });
-        var alwaysSelectedColumns = ['FormattedID', 'Name'];
+        var alwaysSelectedColumns = ['FormattedID'];
         if (this.showFeatureDependencies()) {
             alwaysSelectedColumns.push('Release')
         }
@@ -153,7 +159,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: 'creator-grid-columns-1',
+            stateId: this.getViewType() + 'fields', // columns specific to type of object
             alwaysSelectedValues: alwaysSelectedColumns,
             listeners: {
                 fieldsupdated: function(fields) {
@@ -189,6 +195,9 @@ Ext.define("CArABU.app.TSApp", {
             itemId: 'grid',
             width: this.getWidth(),
             showRowActionsColumn: false,
+            enableColumnHide: false,
+            sortableColumns: false,
+            enableEditing: false,
             store: store,
             columnCfgs: this.getColumns(),
             listeners: {
@@ -214,33 +223,41 @@ Ext.define("CArABU.app.TSApp", {
         return [{
                 xtype: 'gridcolumn',
                 text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : 'Story',
+                __subDataIndex: Constants.ID.STORY, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.STORY)
             },
             {
                 xtype: 'gridcolumn',
+                tdCls: 'group-separator',
+                width: 4,
+            },
+            {
+                xtype: 'gridcolumn',
                 text: 'Predecessor',
+                __subDataIndex: Constants.ID.PREDECESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.PREDECESSOR)
             },
             {
                 xtype: 'gridcolumn',
+                tdCls: 'group-separator',
+                width: 4,
+            },
+            {
+                xtype: 'gridcolumn',
                 text: 'Successor',
+                __subDataIndex: Constants.ID.SUCCESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.SUCCESSOR)
             }
         ]
     },
+
     getSubColumns: function(dataIndex) {
         var selectedFieldNames = this.getFieldNames();
-        var columnCfgs = [];
-        _.forEach(selectedFieldNames, function(selectedFieldName) {
-            var cfg = this.getColumnConfigFromModel(selectedFieldName);
-            // Filter out columns that con't apply in case app was changed from story to feature view
-            if (cfg) {
-                columnCfgs.push(cfg);
-            }
-        }, this);
-        var columns = _.map(columnCfgs, function(columnCfg) {
+        var columns = _.map(selectedFieldNames, function(selectedFieldName) {
             var column;
+            var columnCfg = this.getColumnConfigFromModel(selectedFieldName);
             if (columnCfg.dataIndex === 'Release' || columnCfg.dataIndex === 'Iteration') {
+                // Color code Release and Iteration values
                 column = {
                     xtype: 'gridcolumn',
                     text: columnCfg.text,
@@ -268,25 +285,10 @@ Ext.define("CArABU.app.TSApp", {
                 }
             }
             else {
-                column = {
-                    xtype: 'gridcolumn',
-                    text: columnCfg.text,
-                    scope: this,
-                    renderer: function(value, meta, record) {
-                        try {
-                            var result = record.get(dataIndex).get(columnCfg.dataIndex) || '';
-                            if (Ext.isObject(result)) {
-                                result = result.Name || result._refObjectName || '';
-                            }
-                        }
-                        catch (ex) {
-                            result = '';
-                        }
-                        return result;
-                    }
-                }
+                // All other columns use the default rendering (see Overrides.js for getting to the sub-data)
+                column = columnCfg;
             }
-
+            column.height = 30; // Needed when a column is picked that has a two row title
             return column;
         }, this);
 

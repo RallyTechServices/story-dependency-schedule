@@ -1,7 +1,7 @@
 {
   "_comment": "This file is used by grunt",
   "name": "tsabc",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "debug": "grunt debug",
     "debug:watch": "nodemon --exec grunt debug",

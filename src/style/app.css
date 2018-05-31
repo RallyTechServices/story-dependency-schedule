@@ -1,9 +1,13 @@
 .app {}
 
+/* pills for status indicators */
+
 .status-color {
     padding: 0 5px 0 5px;
     border-radius: 50px;
 }
+
+/* use the same colors as Agile Central for Late, At-Risk and Not Started */
 
 .error {
     background-color: #F66349;
@@ -15,4 +19,17 @@
 
 .unknown {
     background-color: #E0E0E0;
+}
+
+/* visually divide rows into groups */
+
+.group-separator {
+    border-left: solid 2px rgb(213, 213, 213);
+    border-right: solid 2px rgb(213, 213, 213);
+}
+
+/* highlight the group headers */
+
+.x-group-header>.x-column-header-inner {
+    background-color: rgb(213, 213, 213);
 }
