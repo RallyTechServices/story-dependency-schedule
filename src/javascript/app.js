@@ -3,8 +3,10 @@ Ext.define("CArABU.app.TSApp", {
     extend: 'Rally.app.App',
     componentCls: 'app',
     defaults: { margin: 10 },
-    defaultSettings: {
-        DEPENDENCY_TYPE: Constants.SETTING.STORY
+    config: {
+        defaultSettings: {
+            DEPENDENCY_TYPE: Constants.SETTING.STORY
+        }
     },
     layout: {
         type: 'vbox',
@@ -56,6 +58,10 @@ Ext.define("CArABU.app.TSApp", {
 
     showFeatureDependencies: function() {
         return this.getSetting(Constants.SETTING.DEPENDENCY_TYPE) != Constants.SETTING.STORY;
+    },
+
+    getViewType: function() {
+        return this.getSetting(Constants.SETTING.DEPENDENCY_TYPE);
     },
 
     getLowestPortfolioItemTypeName: function() {
@@ -132,7 +138,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: 'grid-filters-1',
+            stateId: this.getViewType() + 'filters',
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
                 inlinefilterchange: function() {
@@ -153,7 +159,7 @@ Ext.define("CArABU.app.TSApp", {
             modelNames: [modelName],
             context: this.getContext(),
             stateful: true,
-            stateId: 'creator-grid-columns-1',
+            stateId: this.getViewType() + 'fields',
             alwaysSelectedValues: alwaysSelectedColumns,
             listeners: {
                 fieldsupdated: function(fields) {
