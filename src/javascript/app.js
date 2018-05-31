@@ -220,31 +220,31 @@ Ext.define("CArABU.app.TSApp", {
         return [{
                 xtype: 'gridcolumn',
                 text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : 'Story',
+                __subDataIndex: Constants.ID.STORY,
                 columns: this.getSubColumns(Constants.ID.STORY)
             },
             {
                 xtype: 'gridcolumn',
                 text: 'Predecessor',
+                __subDataIndex: Constants.ID.PREDECESSOR,
                 columns: this.getSubColumns(Constants.ID.PREDECESSOR)
             },
             {
                 xtype: 'gridcolumn',
                 text: 'Successor',
+                __subDataIndex: Constants.ID.SUCCESSOR,
                 columns: this.getSubColumns(Constants.ID.SUCCESSOR)
             }
         ]
     },
     getSubColumns: function(dataIndex) {
         var selectedFieldNames = this.getFieldNames();
-        var columnCfgs = [];
-        _.forEach(selectedFieldNames, function(selectedFieldName) {
-            var cfg = this.getColumnConfigFromModel(selectedFieldName);
-            // Filter out columns that con't apply in case app was changed from story to feature view
-            if (cfg) {
-                columnCfgs.push(cfg);
-            }
-        }, this);
-        var columns = _.map(columnCfgs, function(columnCfg) {
+        var columns = _.map(selectedFieldNames, function(selectedFieldName) {
+            var columnCfg = this.getColumnConfigFromModel(selectedFieldName);
+            //columnCfg
+            return columnCfg;
+
+            // shortcircuit
             var column;
             if (columnCfg.dataIndex === 'Release' || columnCfg.dataIndex === 'Iteration') {
                 column = {
