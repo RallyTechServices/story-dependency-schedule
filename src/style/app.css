@@ -16,3 +16,16 @@
 .unknown {
     background-color: #E0E0E0;
 }
+
+/* visually divide rows into groups */
+
+.group-separator {
+    border-left: solid 2px rgb(213, 213, 213);
+    border-right: solid 2px rgb(213, 213, 213);
+}
+
+/* highlight the group headers */
+
+.x-group-header>.x-column-header-inner {
+    background-color: rgb(213, 213, 213);
+}

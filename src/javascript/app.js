@@ -147,7 +147,7 @@ Ext.define("CArABU.app.TSApp", {
                 scope: this
             }
         });
-        var alwaysSelectedColumns = ['FormattedID', 'Name'];
+        var alwaysSelectedColumns = ['FormattedID'];
         if (this.showFeatureDependencies()) {
             alwaysSelectedColumns.push('Release')
         }
@@ -195,6 +195,9 @@ Ext.define("CArABU.app.TSApp", {
             itemId: 'grid',
             width: this.getWidth(),
             showRowActionsColumn: false,
+            enableColumnHide: false,
+            sortableColumns: false,
+            enableEditing: false,
             store: store,
             columnCfgs: this.getColumns(),
             listeners: {
@@ -225,9 +228,19 @@ Ext.define("CArABU.app.TSApp", {
             },
             {
                 xtype: 'gridcolumn',
+                tdCls: 'group-separator',
+                width: 4,
+            },
+            {
+                xtype: 'gridcolumn',
                 text: 'Predecessor',
                 __subDataIndex: Constants.ID.PREDECESSOR,
                 columns: this.getSubColumns(Constants.ID.PREDECESSOR)
+            },
+            {
+                xtype: 'gridcolumn',
+                tdCls: 'group-separator',
+                width: 4,
             },
             {
                 xtype: 'gridcolumn',
@@ -237,16 +250,14 @@ Ext.define("CArABU.app.TSApp", {
             }
         ]
     },
+
     getSubColumns: function(dataIndex) {
         var selectedFieldNames = this.getFieldNames();
         var columns = _.map(selectedFieldNames, function(selectedFieldName) {
-            var columnCfg = this.getColumnConfigFromModel(selectedFieldName);
-            //columnCfg
-            return columnCfg;
-
-            // shortcircuit
             var column;
+            var columnCfg = this.getColumnConfigFromModel(selectedFieldName);
             if (columnCfg.dataIndex === 'Release' || columnCfg.dataIndex === 'Iteration') {
+                // Color code Release and Iteration values
                 column = {
                     xtype: 'gridcolumn',
                     text: columnCfg.text,
@@ -274,25 +285,10 @@ Ext.define("CArABU.app.TSApp", {
                 }
             }
             else {
-                column = {
-                    xtype: 'gridcolumn',
-                    text: columnCfg.text,
-                    scope: this,
-                    renderer: function(value, meta, record) {
-                        try {
-                            var result = record.get(dataIndex).get(columnCfg.dataIndex) || '';
-                            if (Ext.isObject(result)) {
-                                result = result.Name || result._refObjectName || '';
-                            }
-                        }
-                        catch (ex) {
-                            result = '';
-                        }
-                        return result;
-                    }
-                }
+                // All other columns use the default rendering (see Overrides.js for getting to the sub-data)
+                column = columnCfg;
             }
-
+            column.height = 30;
             return column;
         }, this);
 
