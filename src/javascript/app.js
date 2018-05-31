@@ -147,7 +147,7 @@ Ext.define("CArABU.app.TSApp", {
                 scope: this
             }
         });
-        var alwaysSelectedColumns = ['FormattedID'];
+        var alwaysSelectedColumns = ['FormattedID', 'Name'];
         if (this.showFeatureDependencies()) {
             alwaysSelectedColumns.push('Release')
         }
