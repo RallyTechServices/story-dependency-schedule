@@ -8,7 +8,10 @@ Ext.define('Constants', function(Constants) {
                 OK: 'ok',
                 WARNING: 'warning',
                 ERROR: 'error',
-                UNKNOWN: 'unknown'
+                UNKNOWN: 'unknown',
+                ALTERNATE_ROW: 'alternate-row',
+                HIDDEN: 'hidden',
+                FIRST_IN_GROUP: 'first-in-group'
             },
             ID: {
                 STORY: 'STORY',
@@ -18,6 +21,10 @@ Ext.define('Constants', function(Constants) {
             LABEL: {
                 UNSCHEDULED: 'Unscheduled',
                 DEPENDENCY_TYPE: 'Dependency Type',
+                SHOW_ALL: 'Include items with no dependencies',
+                STORY: 'Story',
+                PREDECESSOR: 'Predecessor(s)',
+                SUCCESSOR: 'Successor(s)'
             },
             SETTING: {
                 DEPENDENCY_TYPE: 'DEPENDENCY_TYPE',

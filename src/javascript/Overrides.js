@@ -8,18 +8,23 @@ Ext.override(Rally.ui.grid.CellRendererFactory, {
     createRendererFunction: function(column) {
         var renderer = this.callParent(arguments);
         return function(value, metaData, record, rowIndex, colIndex, store, view) {
-
+            var result;
+            // Now get the sub-data so the default renderer can work
             var subRecord = record;
-            if (column.initialConfig.isContained) {
-                var subDataIndex = column.initialConfig.isContained.__subDataIndex;
+            var subDataIndex = column.__subDataIndex;
+            if (subDataIndex) {
                 subRecord = record.get(subDataIndex);
             }
             if (subRecord) {
-                return renderer(value, metaData, subRecord, rowIndex, colIndex, store, view);
+                result = renderer(value, metaData, subRecord, rowIndex, colIndex, store, view);
             }
             else {
-                return '';
+                result = '';
             }
+
+            // After the default renderer has run, update the tdCls (it overwrite the tdCls value)
+            Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
+            return result;
         }
     }
 });

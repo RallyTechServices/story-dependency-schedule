@@ -30,7 +30,8 @@ Ext.define('MetricsManager', function(MetricsManager) {
             return Deft.promise.Promise.when([]);
         }
 
-        var dependentPromises = _.map(records, function(record) {
+        var dependentPromises = [];
+        _.forEach(records, function(record) {
             var predecessorsRef = record.get('Predecessors');
             var successorsRef = record.get('Successors');
             var predecessors = [];
@@ -54,26 +55,33 @@ Ext.define('MetricsManager', function(MetricsManager) {
                     .load()
             }
 
-            return Deft.promise.Promise.all([predecessors, successors])
-                .then({
-                    scope: this,
-                    success: function(results) {
-                        var rows = _.zip([record], results[0], results[1]);
-                        return _.map(rows, function(row) {
-                            var result = {};
-                            result[Constants.ID.STORY] = record;
-                            result[Constants.ID.PREDECESSOR] = row[1];
-                            result[Constants.ID.SUCCESSOR] = row[2];
-                            return result;
-                        });
-                    }
-                })
+            // only include stories with no dependencies in the results if user
+            // requests them
+            if (Rally.getApp().showItemsWithoutDependencies || predecessorsRef.Count > 0 || successorsRef.Count > 0) {
+                var result = Deft.promise.Promise.all([predecessors, successors])
+                    .then({
+                        scope: this,
+                        success: function(results) {
+                            var rows = _.zip([record], results[0], results[1]);
+                            return _.map(rows, function(row) {
+                                var result = {};
+                                result[Constants.ID.STORY] = record;
+                                result[Constants.ID.PREDECESSOR] = row[1];
+                                result[Constants.ID.SUCCESSOR] = row[2];
+                                return result;
+                            });
+                        }
+                    });
+                dependentPromises.push(result);
+            }
+
         });
 
         // TODO (tj) sorting by primary story?
         return Deft.promise.Promise.all(dependentPromises).then({
             success: function(results) {
-                return _.flatten(results);
+                var data = _.flatten(results);
+                return data;
             }
         })
     }
