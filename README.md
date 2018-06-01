@@ -12,6 +12,8 @@ on release start dates. The app will automatically detect the name of the lowest
 portfolio item name ( Feature is the default ), so this will work in environments that have
 customized portfolio item names.
 
+By default, only items with dependencies are shown, but this can be changed within the app.
+
 ### Colors Used:
 * Primary Artifact Colors
   * Grey - primary artifact is unscheduled. No colors used for predecessors or successors
