@@ -33,3 +33,26 @@
 .x-group-header>.x-column-header-inner {
     background-color: rgb(213, 213, 213);
 }
+
+.alternate-row {
+    background-color: rgb(244, 244, 244) !important;
+}
+
+.first-in-group {
+    border-top: 1px solid rgb(186, 185, 186);
+    /*border-bottom: 1px solid rgb(186, 185, 186);*/
+}
+
+.predecessor {
+    border-top: 1px solid rgb(186, 185, 186);
+    /*border-bottom: 1px solid rgb(186, 185, 186);*/
+}
+
+.successor {
+    border-top: 1px solid rgb(186, 185, 186);
+    /*border-bottom: 1px solid rgb(186, 185, 186);*/
+}
+
+.hidden {
+    visibility: hidden;
+}

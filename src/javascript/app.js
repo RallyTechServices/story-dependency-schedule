@@ -6,19 +6,29 @@ Ext.define("CArABU.app.TSApp", {
     config: {
         defaultSettings: {
             DEPENDENCY_TYPE: Constants.SETTING.STORY
-        }
+        },
     },
     layout: {
         type: 'vbox',
         align: 'stretch',
     },
-    items: [
-        { xtype: 'container', itemId: 'controlsArea' },
+    items: [{
+            xtype: 'container',
+            layout: {
+                type: 'hbox',
+            },
+            items: [
+                { xtype: 'container', itemId: 'controlsArea' },
+                { xtype: 'container', flex: 1 },
+                { xtype: 'container', itemId: 'settingsArea' },
+            ]
+        },
         { xtype: 'container', itemId: 'filtersArea' },
     ],
     integrationHeaders: {
         name: "CArABU.app.TSApp"
     },
+    showItemsWithoutDependencies: false,
 
     onTimeboxScopeChange: function(newTimeboxScope) {
         this.callParent(arguments);
@@ -88,13 +98,20 @@ Ext.define("CArABU.app.TSApp", {
             success: function(model) {
                 this.model = model;
                 this.addFilters(this.modelName);
+                this.addSettingsControls();
                 this.loadPrimaryStories(this.modelName);
             }
         })
     },
 
     loadPrimaryStories: function(modelName) {
-        this.setLoading('Loading...');
+        var grid = this.down('#grid');
+        if (grid) {
+            grid.setLoading('Loading...');
+        }
+        else {
+            this.setLoading('Loading...');
+        }
         this.artifactFetchFields = this.getFieldNames().concat(Constants.ARTIFACT_FETCH_FIELDS);
 
         var filters = [];
@@ -171,6 +188,24 @@ Ext.define("CArABU.app.TSApp", {
 
     },
 
+    addSettingsControls: function() {
+        var settingsArea = this.down('#settingsArea');
+        settingsArea.add({
+            xtype: 'rallycheckboxfield',
+            fieldLabel: Constants.LABEL.SHOW_ALL,
+            labelWidth: 200,
+            name: 'showItemsWithoutDependencies',
+            value: this.showItemsWithoutDependencies,
+            listeners: {
+                scope: this,
+                change: function(checkbox, newValue) {
+                    this.showItemsWithoutDependencies = newValue;
+                    this.loadPrimaryStories(this.modelName);
+                }
+            }
+        });
+    },
+
     addInlineFilterPanel: function(panel) {
         this.down('#filtersArea').add(panel);
     },
@@ -198,6 +233,7 @@ Ext.define("CArABU.app.TSApp", {
             enableColumnHide: false,
             sortableColumns: false,
             enableEditing: false,
+            rowLines: false,
             store: store,
             columnCfgs: this.getColumns(),
             listeners: {
@@ -222,7 +258,7 @@ Ext.define("CArABU.app.TSApp", {
     getColumns: function() {
         return [{
                 xtype: 'gridcolumn',
-                text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : 'Story',
+                text: this.showFeatureDependencies() ? this.getLowestPortfolioItemTypeName() : Constants.LABEL.STORY,
                 __subDataIndex: Constants.ID.STORY, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.STORY)
             },
@@ -233,7 +269,7 @@ Ext.define("CArABU.app.TSApp", {
             },
             {
                 xtype: 'gridcolumn',
-                text: 'Predecessor',
+                text: Constants.LABEL.PREDECESSOR,
                 __subDataIndex: Constants.ID.PREDECESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.PREDECESSOR)
             },
@@ -244,14 +280,14 @@ Ext.define("CArABU.app.TSApp", {
             },
             {
                 xtype: 'gridcolumn',
-                text: 'Successor',
+                text: Constants.LABEL.SUCCESSOR,
                 __subDataIndex: Constants.ID.SUCCESSOR, // See Overrides.js
                 columns: this.getSubColumns(Constants.ID.SUCCESSOR)
             }
         ]
     },
 
-    getSubColumns: function(dataIndex) {
+    getSubColumns: function(subDataIndex) {
         var selectedFieldNames = this.getFieldNames();
         var columns = _.map(selectedFieldNames, function(selectedFieldName) {
             var column;
@@ -262,10 +298,10 @@ Ext.define("CArABU.app.TSApp", {
                     xtype: 'gridcolumn',
                     text: columnCfg.text,
                     scope: this,
-                    renderer: function(value, meta, record) {
+                    renderer: function(value, metaData, record, rowIndex, colIndex, store, view) {
                         var result;
                         try {
-                            switch (dataIndex) {
+                            switch (subDataIndex) {
                                 case Constants.ID.PREDECESSOR:
                                     result = this.predecessorIterationRenderer(record, columnCfg.dataIndex);
                                     break;
@@ -280,6 +316,9 @@ Ext.define("CArABU.app.TSApp", {
                         catch (ex) {
                             result = '';
                         }
+                        // Determine the row color so that row colors alternate anytime the primary
+                        // artifact changes.
+                        Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
                         return result;
                     }
                 }
@@ -289,6 +328,7 @@ Ext.define("CArABU.app.TSApp", {
                 column = columnCfg;
             }
             column.height = 30; // Needed when a column is picked that has a two row title
+            column.__subDataIndex = subDataIndex;
             return column;
         }, this);
 
