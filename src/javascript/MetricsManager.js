@@ -77,6 +77,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
 
         // TODO (tj) sorting by primary story?
         if (dependentPromises.length == 0) {
+            // If no stories found, make sure we still return a promise. .all below doesn't :(
             result = Deft.promise.Promise.when([]);
         }
         else {
