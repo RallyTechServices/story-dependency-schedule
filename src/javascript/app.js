@@ -236,12 +236,6 @@ Ext.define("CArABU.app.TSApp", {
             rowLines: false,
             store: store,
             columnCfgs: this.getColumns(),
-            listeners: {
-                scope: this,
-                itemclick: function(grid, record, item, index) {
-                    console.log(record);
-                }
-            }
         })
     },
 
