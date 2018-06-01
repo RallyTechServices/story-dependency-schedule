@@ -41,9 +41,7 @@ Ext.define('MetricsManager', function(MetricsManager) {
                         limit: Infinity,
                         fetch: Rally.getApp().artifactFetchFields
                     })
-                    .load().then(function(results) {
-                        return results;
-                    });
+                    .load();
             }
             var successors = [];
             if (successorsRef.Count > 0) {
@@ -78,11 +76,17 @@ Ext.define('MetricsManager', function(MetricsManager) {
         });
 
         // TODO (tj) sorting by primary story?
-        return Deft.promise.Promise.all(dependentPromises).then({
-            success: function(results) {
-                var data = _.flatten(results);
-                return data;
-            }
-        })
+        if (dependentPromises.length == 0) {
+            result = Deft.promise.Promise.when([]);
+        }
+        else {
+            result = Deft.promise.Promise.all(dependentPromises).then({
+                success: function(results) {
+                    var data = _.flatten(results);
+                    return data;
+                }
+            });
+        }
+        return result;
     }
 });
