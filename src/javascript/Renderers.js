@@ -30,5 +30,20 @@ Ext.define('Renderers', {
 
         metaData.tdCls = metaData.tdCls + ' ' + extraCls.join(' ');
 
+    },
+
+    featureRenderer: function(metaData, record, rowIndex, store, subDataIndex, columnCfg) {
+        try {
+            var feature = record.get(subDataIndex).get(columnCfg.dataIndex)
+            var result = Rally.nav.DetailLink.getLink({
+                record: feature,
+                text: feature.FormattedID
+            }) + ': ' + feature._refObjectName;
+        }
+        catch (ex) {
+            result = '';
+        }
+        Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
+        return result;
     }
 });
