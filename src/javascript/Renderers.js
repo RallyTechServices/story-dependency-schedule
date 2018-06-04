@@ -32,6 +32,11 @@ Ext.define('Renderers', {
 
     },
 
+    /**
+     * When the Feature has been renamed, the default renderers don't create the linked
+     * ID. Pull the appropriate "feature-level" portfolio item from the records and
+     * use the DetailLink component to generate a link.
+     */
     featureRenderer: function(metaData, record, rowIndex, store, subDataIndex, columnCfg) {
         try {
             var feature = record.get(subDataIndex).get(columnCfg.dataIndex)
