@@ -286,43 +286,56 @@ Ext.define("CArABU.app.TSApp", {
         var columns = _.map(selectedFieldNames, function(selectedFieldName) {
             var column;
             var columnCfg = this.getColumnConfigFromModel(selectedFieldName);
-            if (columnCfg.dataIndex === 'Release' || columnCfg.dataIndex === 'Iteration') {
-                // Color code Release and Iteration values
-                column = {
-                    xtype: 'gridcolumn',
-                    text: columnCfg.text,
-                    scope: this,
-                    renderer: function(value, metaData, record, rowIndex, colIndex, store, view) {
-                        var result;
-                        try {
-                            switch (subDataIndex) {
-                                case Constants.ID.PREDECESSOR:
-                                    result = this.predecessorIterationRenderer(record, columnCfg.dataIndex);
-                                    break;
-                                case Constants.ID.SUCCESSOR:
-                                    result = this.successorIterationRenderer(record, columnCfg.dataIndex);
-                                    break;
-                                default:
-                                    result = this.primaryIterationRenderer(record, columnCfg.dataIndex);
-                                    break;
-                            }
+            switch (columnCfg.dataIndex) {
+                case this.getLowestPortfolioItemTypeName():
+                    column = {
+                        xtype: 'gridcolumn',
+                        text: columnCfg.modelField.displayName,
+                        scope: this,
+                        renderer: function(value, metaData, record, rowIndex, colIndex, store, view) {
+                            return Renderers.featureRenderer(metaData, record, rowIndex, store, subDataIndex, columnCfg);
                         }
-                        catch (ex) {
-                            result = '';
-                        }
-                        // Determine the row color so that row colors alternate anytime the primary
-                        // artifact changes.
-                        Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
-                        return result;
                     }
-                }
-            }
-            else {
-                // All other columns use the default rendering (see Overrides.js for getting to the sub-data)
-                column = columnCfg;
+                    break;
+                case 'Release':
+                case 'Iteration':
+                    // Color code Release and Iteration values
+                    column = {
+                        xtype: 'gridcolumn',
+                        text: columnCfg.text,
+                        scope: this,
+                        renderer: function(value, metaData, record, rowIndex, colIndex, store, view) {
+                            var result;
+                            try {
+                                switch (subDataIndex) {
+                                    case Constants.ID.PREDECESSOR:
+                                        result = this.predecessorIterationRenderer(record, columnCfg.dataIndex);
+                                        break;
+                                    case Constants.ID.SUCCESSOR:
+                                        result = this.successorIterationRenderer(record, columnCfg.dataIndex);
+                                        break;
+                                    default:
+                                        result = this.primaryIterationRenderer(record, columnCfg.dataIndex);
+                                        break;
+                                }
+                            }
+                            catch (ex) {
+                                result = '';
+                            }
+                            // Determine the row color so that row colors alternate anytime the primary
+                            // artifact changes.
+                            Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
+                            return result;
+                        }
+                    }
+                    break;
+                default:
+                    // All other columns use the default rendering (see Overrides.js for getting to the sub-data)
+                    column = columnCfg;
             }
             column.height = 30; // Needed when a column is picked that has a two row title
             column.__subDataIndex = subDataIndex;
+            column.isCellEditable = false;
             return column;
         }, this);
 

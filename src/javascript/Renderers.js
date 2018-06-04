@@ -30,5 +30,25 @@ Ext.define('Renderers', {
 
         metaData.tdCls = metaData.tdCls + ' ' + extraCls.join(' ');
 
+    },
+
+    /**
+     * When the Feature has been renamed, the default renderers don't create the linked
+     * ID. Pull the appropriate "feature-level" portfolio item from the records and
+     * use the DetailLink component to generate a link.
+     */
+    featureRenderer: function(metaData, record, rowIndex, store, subDataIndex, columnCfg) {
+        try {
+            var feature = record.get(subDataIndex).get(columnCfg.dataIndex)
+            var result = Rally.nav.DetailLink.getLink({
+                record: feature,
+                text: feature.FormattedID
+            }) + ': ' + feature._refObjectName;
+        }
+        catch (ex) {
+            result = '';
+        }
+        Renderers.alternateRowModifier(metaData, record, rowIndex, store, subDataIndex);
+        return result;
     }
 });
