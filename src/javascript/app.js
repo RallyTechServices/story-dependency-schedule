@@ -228,7 +228,8 @@ Ext.define("CArABU.app.TSApp", {
         this.add({
             xtype: 'rallygrid',
             itemId: 'grid',
-            width: this.getWidth(),
+            flex: 1,
+            //width: this.getWidth(),
             showRowActionsColumn: false,
             enableColumnHide: false,
             sortableColumns: false,

@@ -1,7 +1,7 @@
 {
   "_comment": "This file is used by grunt",
   "name": "tsabc",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "scripts": {
     "debug": "grunt debug",
     "debug:watch": "nodemon --exec grunt debug",
@@ -25,6 +25,10 @@
     "username": "2.1.0"
   },
   "nodemonConfig": {
-    "ext": "js,json,css"
+    "ext": "js,json,css",
+    "watch": [
+      "src/javascript/",
+      "src/style"
+    ]
   }
 }
