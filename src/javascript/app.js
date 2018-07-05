@@ -99,7 +99,8 @@ Ext.define("CArABU.app.TSApp", {
                 this.model = model;
                 this.addFilters(this.modelName);
                 this.addSettingsControls();
-                this.loadPrimaryStories(this.modelName);
+                // Initial load of stories triggered by change handler on the filter button
+                //this.loadPrimaryStories(this.modelName);
             }
         })
     },
@@ -158,7 +159,13 @@ Ext.define("CArABU.app.TSApp", {
             stateId: this.getViewType() + 'filters', // filters specific to type of object
             listeners: {
                 inlinefilterready: this.addInlineFilterPanel,
-                inlinefilterchange: function() {
+                inlinefilterchange: function(cmp) {
+                    // This component fires change before it is fully added. Capture the
+                    // reference to the filter button in the change handler so it can be used
+                    // by loadPrimaryStories. Attempts to get to
+                    // the button by using this.down('rallyinlinefilterbutton') will return null
+                    // at this point.
+                    this.filterButton = cmp;
                     this.loadPrimaryStories(this.modelName);
                 },
                 scope: this
@@ -211,12 +218,15 @@ Ext.define("CArABU.app.TSApp", {
     },
 
     getFiltersFromButton: function() {
-        var filterButton = this.down('rallyinlinefilterbutton');
-        if (filterButton && filterButton.inlineFilterPanel && filterButton.getWsapiFilter()) {
-            return filterButton.getWsapiFilter();
+        var filters = null;
+        try {
+            filters = this.filterButton.getWsapiFilter()
+        }
+        catch (ex) {
+            // Ignore if filter button not yet available
         }
 
-        return null;
+        return filters;
     },
 
     addGrid: function(store) {
