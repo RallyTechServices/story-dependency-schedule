@@ -151,26 +151,8 @@ Ext.define("CArABU.app.TSApp", {
 
     addFilters: function(modelName) {
         var controlsArea = this.down('#controlsArea');
-        controlsArea.add({
-            xtype: 'rallyinlinefilterbutton',
-            modelNames: [modelName],
-            context: this.getContext(),
-            stateful: true,
-            stateId: this.getViewType() + 'filters', // filters specific to type of object
-            listeners: {
-                inlinefilterready: this.addInlineFilterPanel,
-                inlinefilterchange: function(cmp) {
-                    // This component fires change before it is fully added. Capture the
-                    // reference to the filter button in the change handler so it can be used
-                    // by loadPrimaryStories. Attempts to get to
-                    // the button by using this.down('rallyinlinefilterbutton') will return null
-                    // at this point.
-                    this.filterButton = cmp;
-                    this.loadPrimaryStories(this.modelName);
-                },
-                scope: this
-            }
-        });
+
+        // Add column picker first so we know what fields to fetch during artifact load
         var alwaysSelectedColumns = ['FormattedID', 'Name'];
         if (this.showFeatureDependencies()) {
             alwaysSelectedColumns.push('Release')
@@ -187,6 +169,28 @@ Ext.define("CArABU.app.TSApp", {
             alwaysSelectedValues: alwaysSelectedColumns,
             listeners: {
                 fieldsupdated: function(fields) {
+                    this.loadPrimaryStories(this.modelName);
+                },
+                scope: this
+            }
+        });
+
+        // Add in-line filters
+        controlsArea.add({
+            xtype: 'rallyinlinefilterbutton',
+            modelNames: [modelName],
+            context: this.getContext(),
+            stateful: true,
+            stateId: this.getViewType() + 'filters', // filters specific to type of object
+            listeners: {
+                inlinefilterready: this.addInlineFilterPanel,
+                inlinefilterchange: function(cmp) {
+                    // This component fires change before it is fully added. Capture the
+                    // reference to the filter button in the change handler so it can be used
+                    // by loadPrimaryStories. Attempts to get to
+                    // the button by using this.down('rallyinlinefilterbutton') will return null
+                    // at this point.
+                    this.filterButton = cmp;
                     this.loadPrimaryStories(this.modelName);
                 },
                 scope: this
