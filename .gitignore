@@ -12,3 +12,4 @@ deploy/App.txt
 .settings
 deploy/ConfluenceApp.txt
 deploy/ExternalApp.txt
+*.log
